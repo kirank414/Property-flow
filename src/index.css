@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Premium real estate system color mappings mapped to responsive CSS variables */
+  --color-primary-teal: var(--primary-teal);
+  --color-primary-teal-hover: var(--primary-teal-hover);
+  --color-secondary-teal: var(--secondary-teal);
+  --color-accent-teal: var(--accent-teal);
+  --color-success-teal: var(--success-teal);
+  --color-warn-gold: var(--warn-gold);
+  --color-danger-rose: var(--danger-rose);
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-alternate: var(--brand-alternate);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-title: var(--text-title);
+  --color-brand-body: var(--text-body);
+  --color-brand-muted: var(--text-muted);
+  --color-brand-border: var(--brand-border);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-selected: var(--brand-selected);
+}
+
+/* Custom variant to enable class name strategies in Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  --primary-teal: #0F766E;
+  --primary-teal-hover: #0D9488;
+  --secondary-teal: #14B8A6;
+  --accent-teal: #5EEAD4;
+  --success-teal: #10B981;
+  --warn-gold: #EA580C;
+  --danger-rose: #EF4444;
+  
+  --brand-bg: #F8FAFC;            /* Soft off-white canvas with blue undertones */
+  --brand-alternate: #F1F5F9;     /* Separator surfaces */
+  --brand-surface: #FFFFFF;       /* Crisp card base overlay */
+  --text-title: #0F172A;          /* Deep obsidian text for maximum contrast headers */
+  --text-body: #334155;           /* Slate 700 text for comfortable readability index */
+  --text-muted: #475569;          /* Slate 600 text for secondary descriptors */
+  --brand-border: #E2E8F0;        /* Fine divider grids */
+  --brand-hover: #F0FDFA;         /* Soft teal hint for live operations */
+  --brand-selected: #E6FBF7;      /* Pristine selection background */
+}
+
+/* Redefined variables mapped out for high-fidelity dark environments (GH/Notion style) */
+.dark {
+  --primary-teal: #14B8A6;
+  --primary-teal-hover: #2DD4BF;
+  --secondary-teal: #2DD4BF;
+  --accent-teal: #99F6E4;
+  --success-teal: #34D399;
+  --warn-gold: #F59E0B;
+  --danger-rose: #F87171;
+
+  --brand-bg: #0B0F19;            /* Sleek midnight dark space void */
+  --brand-alternate: #111827;     /* Slate 950 deep panels */
+  --brand-surface: #1E293B;       /* Premium slate 800 active surfaces */
+  --text-title: #F8FAFC;          /* Crisp high-contrast title text */
+  --text-body: #CBD5E1;           /* slate-300 highly readable text */
+  --text-muted: #94A3B8;          /* slate-400 subtext */
+  --brand-border: #334155;        /* slate-700 solid borders */
+  --brand-hover: #1E293B;         /* active state tracking */
+  --brand-selected: #334155;      /* selected state tracking */
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--brand-bg);
+  color: var(--text-body);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-title);
+  font-family: "Plus Jakarta Sans", var(--font-sans);
+  transition: color 0.2s ease;
+}

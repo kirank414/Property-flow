@@ -1,0 +1,8 @@
+{
+  "name": "PropertyFlow",
+  "description": "Premium PropTech portfolio operations system with dynamic KPI tracking, reservation scheduling, maintenance dispatch, and analytics reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
