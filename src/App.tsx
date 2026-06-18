@@ -13,151 +13,31 @@ import AdminView from './components/AdminView.tsx';
 import UserProfileView from './components/UserProfileView.tsx';
 import RealTimeMonitorView from './components/RealTimeMonitorView.tsx';
 import { ErrorBoundary, SafeguardState } from './components/DesignSystem.tsx';
-
-// Seed Initial Data
-const initialUsers: User[] = [
-  { id: '1', name: 'Eleanor Vance', email: 'eleanor@propertyflow.com', role: 'Admin', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80' },
-  { id: '2', name: 'Marcus Brody', email: 'marcus@propertyflow.com', role: 'Manager', avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80' },
-  { id: '3', name: 'Dave Miller', email: 'dave@propertyflow.com', role: 'Staff', avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80' },
-  { id: '4', name: 'Sarah Connor', email: 'sarah@propertyflow.com', role: 'Tenant', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80', propertyId: 'prop-1' }
-];
-
-const initialProperties: Property[] = [
-  {
-    id: 'prop-1',
-    name: 'Summit Heights',
-    address: '742 Evergreen Terrace, Sector 7G',
-    type: 'Residential',
-    units: 120,
-    occupancy: 96,
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&auto=format&fit=crop&q=80',
-    manager: 'Marcus Brody',
-    amenities: ['Skyline Pool', 'Fitness Center', 'Penthouse Lounge', 'E-Charging Stations']
-  },
-  {
-    id: 'prop-2',
-    name: 'Oakridge Manor',
-    address: '1048 Peachtree Street, Midtown',
-    type: 'Residential',
-    units: 80,
-    occupancy: 91,
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&auto=format&fit=crop&q=80',
-    manager: 'Marcus Brody',
-    amenities: ['Garden Lounge', 'Tennis Courts', 'Pet Spa', 'Co-Working Station']
-  },
-  {
-    id: 'prop-3',
-    name: 'Centennial Plaza',
-    address: '500 Corporate Boulevard, Suite 100',
-    type: 'Commercial',
-    units: 45,
-    occupancy: 88,
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=80',
-    manager: 'Eleanor Vance',
-    amenities: ['Shared Boardroom', 'Cafe Patio', 'Concierge Lobby', 'Fiber Internet']
-  }
-];
-
-const initialMaintenance: MaintenanceRequest[] = [
-  {
-    id: 'maint-1',
-    title: 'Boiler leakage and hot water outage',
-    description: 'The main hot water boiler is leaking in the basement, affecting heating and water in Unit 402. Flooding risk is currently high.',
-    propertyId: 'prop-1',
-    unitNumber: '402',
-    priority: 'Urgent',
-    status: 'Pending',
-    createdBy: 'Sarah Connor',
-    createdAt: '2026-06-08T14:30:00Z',
-    category: 'Plumbing'
-  },
-  {
-    id: 'maint-2',
-    title: 'HVAC system diagnostic scan',
-    description: 'Air conditioner unit blowing warm air during afternoon peak cooling cycles. Filter was changed but compressor makes loud buzzing sounds.',
-    propertyId: 'prop-3',
-    unitNumber: 'Suite 12',
-    priority: 'High',
-    status: 'Assigned',
-    createdBy: 'Alice Green (Tenant)',
-    createdAt: '2026-06-07T09:15:00Z',
-    assignedTo: 'Dave Miller',
-    category: 'HVAC'
-  },
-  {
-    id: 'maint-3',
-    title: 'Replace burnt workspace ballast and tubes',
-    description: 'Three overhead fluorescent ballasts dropped voltage and burnt out. Noise coming from lighting cluster; requires instant bypass.',
-    propertyId: 'prop-2',
-    unitNumber: 'Unit 104',
-    priority: 'Medium',
-    status: 'In Progress',
-    createdBy: 'Michael Roe (Tenant)',
-    createdAt: '2026-06-09T08:00:00Z',
-    assignedTo: 'Dave Miller',
-    category: 'Electrical'
-  },
-  {
-    id: 'maint-4',
-    title: 'Repaint corridor entry wall and repair drywall',
-    description: 'Moving boxes scraped the drywall in the east wing corridor. Needs mud patch, sanding, and matching eggshell touch up.',
-    propertyId: 'prop-1',
-    unitNumber: 'Common Area',
-    priority: 'Low',
-    status: 'Completed',
-    createdBy: 'Marcus Brody',
-    createdAt: '2026-06-05T11:00:00Z',
-    assignedTo: 'Dave Miller',
-    category: 'General'
-  }
-];
-
-const initialBookings: BookingSlot[] = [
-  { id: 'b-1', amenityName: 'Skyline Pool', propertyId: 'prop-1', user: 'Sarah Connor', start: '10:00', end: '11:30', status: 'booked', price: 25 },
-  { id: 'b-2', amenityName: 'Penthouse Lounge', propertyId: 'prop-1', user: 'Tommy Oliver', start: '14:00', end: '16:00', status: 'booked', price: 75 },
-  { id: 'b-3', amenityName: 'Fitness Center', propertyId: 'prop-1', user: 'Sarah Connor', start: '08:00', end: '09:00', status: 'booked', price: 0 },
-  { id: 'b-4', amenityName: 'Garden Lounge', propertyId: 'prop-2', user: 'Lois Lane', start: '11:00', end: '13:00', status: 'booked', price: 15 }
-];
+import { useQueryClient } from '@tanstack/react-query';
+import { 
+  useProperties, 
+  useMaintenanceRequests, 
+  useBookings, 
+  useUsers,
+  useCreateMaintenanceRequest,
+  useUpdateMaintenanceStatus,
+  useAssignMaintenanceRequest,
+  useCreateBooking,
+  useCancelBooking,
+  useCheckInBooking,
+  useCheckOutBooking
+} from './api/hooks';
+import { AuthService } from './api/services';
 
 export default function App() {
   const [view, setView] = useState<'landing' | 'login' | 'dashboard' | 'properties' | 'maintenance' | 'amenities' | 'analytics' | 'admin' | 'profile' | 'monitor'>('landing');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [properties, setProperties] = useState<Property[]>(initialProperties);
-  const [maintenance, setMaintenance] = useState<MaintenanceRequest[]>(initialMaintenance);
-  const [bookings, setBookings] = useState<BookingSlot[]>(initialBookings);
   const [simulationState, setSimulationState] = useState<'normal' | 'network' | 'unauthorized' | 'session'>('normal');
 
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
     const saved = localStorage.getItem('propertyflow-theme');
     return (saved as 'light' | 'dark' | 'system') || 'system';
   });
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    
-    const applyTheme = () => {
-      root.classList.remove('light', 'dark');
-      
-      if (theme === 'system') {
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        root.classList.add(systemTheme);
-      } else {
-        root.classList.add(theme);
-      }
-    };
-
-    applyTheme();
-    localStorage.setItem('propertyflow-theme', theme);
-
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleMediaChange = () => {
-        applyTheme();
-      };
-      mediaQuery.addEventListener('change', handleMediaChange);
-      return () => mediaQuery.removeEventListener('change', handleMediaChange);
-    }
-  }, [theme]);
 
   const [notifications, setNotifications] = useState<AppNotification[]>([
     {
@@ -189,129 +69,287 @@ export default function App() {
       time: '2h ago',
       read: true,
       dateGroup: 'Today'
-    },
-    {
-      id: 'notif-4',
-      title: 'HVAC Seasonal Tune-Up Notice',
-      description: 'Grand plaza central chiller diagnostic inspection requires facility authorization.',
-      category: 'property',
-      priority: 'medium',
-      time: 'Yesterday',
-      read: false,
-      dateGroup: 'Yesterday'
-    },
-    {
-      id: 'notif-5',
-      title: 'Holiday Capacity Peak Limit Warning',
-      description: 'Lounge booking density is reaching capacity limits. Preemptive schedule blocks might trigger automatically.',
-      category: 'conflict',
-      priority: 'low',
-      time: '3 days ago',
-      read: true,
-      dateGroup: 'Older'
     }
   ]);
+
+  // React Query Queries
+  const { data: propertiesData, isLoading: propertiesLoading } = useProperties();
+  const { data: maintenanceData, isLoading: maintenanceLoading } = useMaintenanceRequests();
+  const { data: bookingsData, isLoading: bookingsLoading } = useBookings();
+  const { data: usersData } = useUsers();
+
+  const properties = (propertiesData?.properties || []).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    address: p.address,
+    type: p.type,
+    units: p.units,
+    occupancy: p.occupancyRate,
+    image: p.imageUrl || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&auto=format&fit=crop&q=80',
+    manager: p.owner ? `${p.owner.firstName} ${p.owner.lastName}` : 'Unassigned',
+    amenities: p.amenities ? p.amenities.map((am: any) => am.name) : [],
+  } as Property));
+
+  const maintenance = (maintenanceData || []).map((req: any) => {
+    let priority: 'Low' | 'Medium' | 'High' | 'Urgent' = 'Medium';
+    if (req.priority === 'LOW') priority = 'Low';
+    else if (req.priority === 'HIGH') priority = 'High';
+    else if (req.priority === 'EMERGENCY') priority = 'Urgent';
+
+    let status: 'Pending' | 'Assigned' | 'In Progress' | 'Completed' = 'Pending';
+    if (req.status === 'ASSIGNED') status = 'Assigned';
+    else if (req.status === 'IN_PROGRESS') status = 'In Progress';
+    else if (req.status === 'COMPLETED') status = 'Completed';
+
+    return {
+      id: req.id,
+      title: req.title,
+      description: req.description,
+      propertyId: req.propertyId,
+      propertyName: req.propertyName || undefined,
+      unitNumber: req.unitNumber || 'Suite 402',
+      priority,
+      status,
+      createdBy: req.tenantName || 'Sarah Connor',
+      createdAt: req.createdAt,
+      assignedTo: req.assignedTechnicianName || undefined,
+      category: req.category || 'General',
+    } as MaintenanceRequest;
+  });
+
+  const bookings = (bookingsData || []).map((b: any) => {
+    const startStr = b.startTime ? new Date(b.startTime).toISOString().split('T')[1].substring(0, 5) : '10:00';
+    const endStr = b.endTime ? new Date(b.endTime).toISOString().split('T')[1].substring(0, 5) : '11:30';
+
+    return {
+      id: b.id,
+      amenityName: b.amenityName || 'Skyline Pool',
+      propertyId: b.propertyId || 'prop-1111-1111-1111-111111111111',
+      user: b.user || 'Sarah Connor',
+      start: startStr,
+      end: endStr,
+      status: b.status === 'APPROVED' ? 'booked' : b.status === 'IN_USE' ? 'IN_USE' : b.status === 'COMPLETED' ? 'COMPLETED' : 'cancelled',
+      actualCheckInAt: b.actualCheckInAt || null,
+      actualCheckOutAt: b.actualCheckOutAt || null,
+    } as BookingSlot;
+  });
+
+  const users = (usersData?.users || []).map((u: any) => {
+    let role: 'Admin' | 'Manager' | 'Staff' | 'Tenant' = 'Tenant';
+    if (u.role === 'ADMIN') role = 'Admin';
+    else if (u.role === 'MANAGER') role = 'Manager';
+    else if (u.role === 'STAFF') role = 'Staff';
+    return {
+      id: u.id,
+      email: u.email,
+      name: `${u.firstName} ${u.lastName}`,
+      role,
+      avatarUrl: u.avatarUrl || undefined,
+      propertyId: u.propertyId || undefined,
+    } as User;
+  });
+
+  const amenities = ['Skyline Pool', 'Fitness Center', 'Penthouse Lounge', 'Garden Lounge', 'Tennis Courts'];
+
+  const setUsers = () => {};
+  const setProperties = () => {};
+  const setMaintenance = () => {};
+  const setBookings = () => {};
+  const setAmenities = () => {};
+
+  // React Query Mutations
+  const createTicketMutation = useCreateMaintenanceRequest();
+  const updateTicketStatusMutation = useUpdateMaintenanceStatus();
+  const assignTicketMutation = useAssignMaintenanceRequest();
+
+  const createBookingMutation = useCreateBooking();
+  const cancelBookingMutation = useCancelBooking();
+  const checkInBookingMutation = useCheckInBooking();
+  const checkOutBookingMutation = useCheckOutBooking();
+
+  // Load token and restore session on boot
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      AuthService.me()
+        .then((userDto) => {
+          let role: 'Admin' | 'Manager' | 'Staff' | 'Tenant' = 'Tenant';
+          if (userDto.role === 'ADMIN') role = 'Admin';
+          else if (userDto.role === 'MANAGER') role = 'Manager';
+          else if (userDto.role === 'STAFF') role = 'Staff';
+
+          const user: User = {
+            id: userDto.id,
+            email: userDto.email,
+            name: `${userDto.firstName} ${userDto.lastName}`,
+            role,
+            avatarUrl: userDto.avatarUrl || undefined,
+            propertyId: userDto.propertyId || undefined,
+          };
+          setCurrentUser(user);
+          setView('dashboard');
+          import('./api/socket').then(({ reconnectSocket }) => {
+            reconnectSocket(token);
+          });
+        })
+        .catch(() => {
+          localStorage.removeItem('access_token');
+          setCurrentUser(null);
+          setView('landing');
+        });
+    }
+  }, []);
+
+  // Theme support
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const applyTheme = () => {
+      root.classList.remove('light', 'dark');
+      if (theme === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+      } else {
+        root.classList.add(theme);
+      }
+    };
+
+    applyTheme();
+    localStorage.setItem('propertyflow-theme', theme);
+
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleMediaChange = () => {
+        applyTheme();
+      };
+      mediaQuery.addEventListener('change', handleMediaChange);
+      return () => mediaQuery.removeEventListener('change', handleMediaChange);
+    }
+  }, [theme]);
+
+  // Real-time updates invalidation via WebSockets
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    import('./api/socket').then(({ socket }) => {
+      socket.connect();
+      
+      socket.on('dashboard.invalidate', () => {
+        queryClient.invalidateQueries({ queryKey: ['bookings'] });
+        queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      });
+
+      socket.on('maintenance.update', () => {
+        queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      });
+
+      socket.on('booking.update', () => {
+        queryClient.invalidateQueries({ queryKey: ['bookings'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      });
+    });
+
+    return () => {
+      import('./api/socket').then(({ socket }) => {
+        socket.off('dashboard.invalidate');
+        socket.off('maintenance.update');
+        socket.off('booking.update');
+        socket.disconnect();
+      });
+    };
+  }, [currentUser, queryClient]);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     setView('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+    } catch (err) {
+      console.error('Logout request failed:', err);
+    }
     setCurrentUser(null);
     setView('landing');
+    import('./api/socket').then(({ socket }) => {
+      socket.disconnect();
+    });
   };
 
   const handleCreateTicket = (ticket: Omit<MaintenanceRequest, 'id' | 'createdAt' | 'createdBy' | 'status'>) => {
-    const newTicket: MaintenanceRequest = {
-      ...ticket,
-      id: `maint-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      createdBy: currentUser?.name || 'Anonymous',
-      status: 'Pending'
-    };
-    setMaintenance([newTicket, ...maintenance]);
+    let priority = 'MEDIUM';
+    if (ticket.priority === 'Low') priority = 'LOW';
+    else if (ticket.priority === 'High') priority = 'HIGH';
+    else if (ticket.priority === 'Urgent') priority = 'EMERGENCY';
 
-    // SLA notification trigger
-    const priorityNotif: AppNotification = {
-      id: `notif-${Date.now()}`,
-      title: `Emergency Repair Dispatched`,
-      description: `New [${ticket.priority}] ${ticket.category} ticket generated for Unit ${ticket.unitNumber}: "${ticket.title}".`,
-      category: 'maintenance',
-      priority: ticket.priority === 'Urgent' ? 'critical' : ticket.priority === 'High' ? 'high' : 'medium',
-      time: 'Just now',
-      read: false,
-      dateGroup: 'Today'
-    };
-    setNotifications(prev => [priorityNotif, ...prev]);
+    createTicketMutation.mutate({
+      propertyId: ticket.propertyId,
+      tenantId: currentUser?.id || 'd4444444-4444-4444-4444-444444444444',
+      title: ticket.title,
+      description: ticket.description,
+      category: ticket.category || 'General',
+      priority,
+      unitNumber: ticket.unitNumber || '402',
+    });
   };
 
   const handleUpdateTicketStatus = (id: string, status: MaintenanceRequest['status'], assignedTo?: string) => {
-    setMaintenance(prev => prev.map(t => {
-      if (t.id === id) {
-        // Create dynamic status update notification
-        const statusNotif: AppNotification = {
-          id: `status-notif-${Date.now()}`,
-          title: `Ticket Status Updated`,
-          description: `"${t.title}" is now marked as [${status}]${assignedTo ? `. Staff: ${assignedTo}` : ''}.`,
-          category: 'maintenance',
-          priority: 'medium',
-          time: 'Just now',
-          read: false,
-          dateGroup: 'Today'
-        };
-        setNotifications(prevNotifs => [statusNotif, ...prevNotifs]);
+    let dbStatus = 'PENDING';
+    if (status === 'Assigned') dbStatus = 'ASSIGNED';
+    else if (status === 'In Progress') dbStatus = 'IN_PROGRESS';
+    else if (status === 'Completed') dbStatus = 'COMPLETED';
 
-        return {
-          ...t,
-          status,
-          ...(assignedTo !== undefined ? { assignedTo } : {})
-        };
+    if (assignedTo !== undefined) {
+      const staffUser = users.find(u => u.name === assignedTo);
+      if (staffUser) {
+        assignTicketMutation.mutate({ id, technicianId: staffUser.id }, {
+          onSuccess: () => {
+            updateTicketStatusMutation.mutate({ id, status: dbStatus as any });
+          }
+        });
+        return;
       }
-      return t;
-    }));
+    }
+    updateTicketStatusMutation.mutate({ id, status: dbStatus as any });
   };
 
   const handleCreateBooking = (booking: Omit<BookingSlot, 'id' | 'status'>) => {
-    const newBooking: BookingSlot = {
-      ...booking,
-      id: `booking-${Date.now()}`,
-      status: 'booked'
-    };
-    setBookings([newBooking, ...bookings]);
+    const propObj = propertiesData?.properties?.find(p => p.id === booking.propertyId);
+    const amenityObj = propObj?.amenities?.find((am: any) => am.name === booking.amenityName);
+    
+    if (!amenityObj) {
+      alert('Error: Specified amenity does not exist on property.');
+      return;
+    }
 
-    // Booking notification trigger
-    const bookingNotif: AppNotification = {
-      id: `booking-notif-${Date.now()}`,
-      title: 'Facility Reservation Confirmed',
-      description: `Success! ${booking.amenityName} has been booked for ${booking.start} - ${booking.end}. Passcode synced.`,
-      category: 'booking',
-      priority: 'low',
-      time: 'Just now',
-      read: false,
-      dateGroup: 'Today'
-    };
-    setNotifications(prev => [bookingNotif, ...prev]);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const startTime = new Date(`${tomorrowStr}T${booking.start}:00Z`).toISOString();
+    const endTime = new Date(`${tomorrowStr}T${booking.end}:00Z`).toISOString();
+
+    createBookingMutation.mutate({
+      amenityId: amenityObj.id,
+      tenantId: currentUser?.id || 'd4444444-4444-4444-4444-444444444444',
+      startTime,
+      endTime,
+    });
   };
 
   const handleCancelBooking = (id: string) => {
-    setBookings(prev => prev.map(b => {
-      if (b.id === id) {
-        const cancelNotif: AppNotification = {
-          id: `cancel-notif-${Date.now()}`,
-          title: 'Facility Booking Cancelled',
-          description: `Your appointment for ${b.amenityName} has been successfully released/refunded.`,
-          category: 'booking',
-          priority: 'low',
-          time: 'Just now',
-          read: false,
-          dateGroup: 'Today'
-        };
-        setNotifications(prevNotifs => [cancelNotif, ...prevNotifs]);
-        return { ...b, status: 'cancelled' };
-      }
-      return b;
-    }));
+    cancelBookingMutation.mutate(id);
+  };
+
+  const handleCheckInBooking = (id: string) => {
+    checkInBookingMutation.mutate(id);
+  };
+
+  const handleCheckOutBooking = (id: string) => {
+    checkOutBookingMutation.mutate(id);
   };
 
   const handleMarkNotificationRead = (id: string) => {
@@ -332,7 +370,7 @@ export default function App() {
       if (view === 'login') {
         return (
           <LoginPage 
-            users={initialUsers} 
+            users={users} 
             onLogin={handleLogin} 
             onBackToMarketing={() => setView('landing')} 
           />
@@ -343,7 +381,7 @@ export default function App() {
           onLoginClick={() => setView('login')} 
           onGetStarted={() => {
             // Log in as manager by default for easy experience
-            handleLogin(initialUsers[1]);
+            handleLogin(users[1]);
           }} 
           theme={theme}
           setTheme={setTheme}
@@ -380,7 +418,7 @@ export default function App() {
             maintenance={maintenance}
             onCreateTicket={handleCreateTicket}
             onUpdateTicketStatus={handleUpdateTicketStatus}
-            staffUsers={initialUsers.filter(u => u.role === 'Staff')}
+            staffUsers={users.filter(u => u.role === 'Staff')}
           />
         );
       case 'amenities':
@@ -391,6 +429,8 @@ export default function App() {
             bookings={bookings}
             onCreateBooking={handleCreateBooking}
             onCancelBooking={handleCancelBooking}
+            onCheckInBooking={handleCheckInBooking}
+            onCheckOutBooking={handleCheckOutBooking}
           />
         );
       case 'analytics':
@@ -405,9 +445,17 @@ export default function App() {
       case 'admin':
         return (
           <AdminView 
-            users={initialUsers}
+            currentUser={currentUser}
+            users={users}
+            setUsers={setUsers}
             properties={properties}
+            setProperties={setProperties}
             maintenance={maintenance}
+            setMaintenance={setMaintenance}
+            bookings={bookings}
+            setBookings={setBookings}
+            amenities={amenities}
+            setAmenities={setAmenities}
           />
         );
       case 'profile':
@@ -425,6 +473,8 @@ export default function App() {
           <RealTimeMonitorView 
             maintenance={maintenance}
             setMaintenance={setMaintenance}
+            properties={properties}
+            currentUser={currentUser}
           />
         );
       default:
@@ -446,7 +496,7 @@ export default function App() {
     return (
       <LandingPage 
         onLoginClick={() => setView('login')} 
-        onGetStarted={() => handleLogin(initialUsers[1])} // Default login with Manager Brody
+        onGetStarted={() => handleLogin(users[1])} // Default login with Manager Brody
         theme={theme}
         setTheme={setTheme}
       />
@@ -456,7 +506,7 @@ export default function App() {
   if (view === 'login' && !currentUser) {
     return (
       <LoginPage 
-        users={initialUsers} 
+        users={users} 
         onLogin={handleLogin} 
         onBackToMarketing={() => setView('landing')} 
       />

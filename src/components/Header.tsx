@@ -354,12 +354,14 @@ export default function Header({
               <div className="px-3.5 py-1.5 border-b border-slate-100 bg-slate-50/50 dark:border-[#334155] dark:bg-[#111827] mb-1 font-bold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wider text-[9px]">
                 Portfolio Operations Desk
               </div>
-              <button 
-                onClick={() => { setShowQuickAdd(false); onNavigate('properties'); }}
-                className="w-full px-4 py-2 hover:bg-teal-50 dark:hover:bg-[#111827] text-left hover:text-primary-teal dark:hover:text-[#14B8A6] flex items-center space-x-2 font-medium"
-              >
-                <span>🏢</span> <span>Inspect Properties Index</span>
-              </button>
+              {currentUser.role !== 'Tenant' && (
+                <button 
+                  onClick={() => { setShowQuickAdd(false); onNavigate('properties'); }}
+                  className="w-full px-4 py-2 hover:bg-teal-50 dark:hover:bg-[#111827] text-left hover:text-primary-teal dark:hover:text-[#14B8A6] flex items-center space-x-2 font-medium"
+                >
+                  <span>🏢</span> <span>Inspect Properties Index</span>
+                </button>
+              )}
               <button 
                 onClick={() => { setShowQuickAdd(false); onNavigate('maintenance'); }}
                 className="w-full px-4 py-2 hover:bg-teal-50 dark:hover:bg-[#111827] text-left hover:text-primary-teal dark:hover:text-[#14B8A6] flex items-center space-x-2 font-medium"
@@ -372,12 +374,12 @@ export default function Header({
               >
                 <span>📅</span> <span>Reserve Shared Amenity Slot</span>
               </button>
-              {currentUser.role === 'Admin' && (
+              {currentUser.role !== 'Tenant' && (
                 <button 
                   onClick={() => { setShowQuickAdd(false); onNavigate('analytics'); }}
                   className="w-full px-4 py-2 hover:bg-teal-50 dark:hover:bg-[#111827] text-left hover:text-primary-teal dark:hover:text-[#14B8A6] border-t border-slate-100 dark:border-[#334155]/60 mt-1 flex items-center space-x-2 font-medium"
                 >
-                  <span>📈</span> <span>Generate Portfolio Charts</span>
+                  <span>📈</span> <span>Generate Platform Charts</span>
                 </button>
               )}
             </div>

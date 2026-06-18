@@ -20,14 +20,16 @@ interface AmenityViewProps {
   bookings: BookingSlot[];
   onCreateBooking: (booking: any) => void;
   onCancelBooking: (id: string) => void;
+  onCheckInBooking?: (id: string) => void;
+  onCheckOutBooking?: (id: string) => void;
 }
 
 const localAmenities = [
-  { name: 'Skyline Pool', location: 'Summit Heights Penthouse Deck', price: 25, icon: '🏊' },
-  { name: 'Fitness Center', location: 'Summit Heights Level 2', price: 0, icon: '🏋️' },
-  { name: 'Penthouse Lounge', location: 'Summit Heights West Tower', price: 75, icon: '🍹' },
-  { name: 'Garden Lounge', location: 'Oakridge Manor Courtyard', price: 15, icon: '🌳' },
-  { name: 'Tennis Courts', location: 'Oakridge Manor East Wing', price: 10, icon: '🎾' }
+  { name: 'Skyline Pool', location: 'Penthouse Deck', price: 25, icon: '🏊' },
+  { name: 'Fitness Center', location: 'Level 2 Fitness Room', price: 0, icon: '🏋️' },
+  { name: 'Penthouse Lounge', location: 'West Tower Lounge', price: 75, icon: '🍹' },
+  { name: 'Garden Lounge', location: 'Courtyard Garden', price: 15, icon: '🌳' },
+  { name: 'Tennis Courts', location: 'East Wing Courts', price: 10, icon: '🎾' }
 ];
 
 const timeSlots = ['08:00 - 09:30', '10:00 - 11:30', '12:00 - 13:30', '14:00 - 15:30', '16:00 - 17:30', '18:00 - 19:30'];
@@ -37,10 +39,13 @@ export default function AmenityView({
   properties,
   bookings,
   onCreateBooking,
-  onCancelBooking
+  onCancelBooking,
+  onCheckInBooking,
+  onCheckOutBooking
 }: AmenityViewProps) {
+  const tenantProperty = currentUser.role === 'Tenant' && currentUser.propertyId ? currentUser.propertyId : properties[0]?.id || '';
   const [selectedAmenity, setSelectedAmenity] = useState(localAmenities[0]);
-  const [selectedProperty, setSelectedProperty] = useState(properties[0]?.id || 'prop-1');
+  const [selectedProperty, setSelectedProperty] = useState(tenantProperty);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(timeSlots[1]);
   const [notification, setNotification] = useState<{ type: 'success' | 'info' | 'error'; message: string | null } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +62,7 @@ export default function AmenityView({
   const isSlotBooked = (slot: string) => {
     const [start, end] = slot.split(' - ');
     return bookings.some(
-      b => b.status === 'booked' && 
+      b => (b.status === 'booked' || b.status === 'APPROVED' || b.status === 'IN_USE') && 
       b.amenityName === selectedAmenity.name && 
       b.propertyId === selectedProperty && 
       b.start === start &&
@@ -66,7 +71,18 @@ export default function AmenityView({
   };
 
   // Current active user bookings
-  const userBookings = bookings.filter(b => b.status === 'booked');
+  const userBookings = bookings.filter(b => {
+    if (currentUser.role === 'Tenant' && b.user !== currentUser.name) {
+      return false;
+    }
+    return (
+      b.status === 'booked' || 
+      b.status === 'APPROVED' || 
+      b.status === 'IN_USE' || 
+      b.status === 'COMPLETED' || 
+      b.status === 'NO_SHOW'
+    );
+  });
 
   const handleBook = () => {
     if (isSlotBooked(selectedTimeSlot)) {
@@ -89,7 +105,7 @@ export default function AmenityView({
     
     setNotification({
       type: 'success',
-      message: `Reserved ${selectedAmenity.name} at ${properties.find(p => p.id === selectedProperty)?.name || 'Summit Complex'} successfully! Check your email for entry access passcodes.`
+      message: `Reserved ${selectedAmenity.name} at ${properties.find(p => p.id === selectedProperty)?.name || 'Property'} successfully! Check your email for entry access passcodes.`
     });
     setTimeout(() => setNotification(null), 5000);
   };
@@ -146,7 +162,9 @@ export default function AmenityView({
                     </div>
                     <div>
                       <h4 className={`text-base font-extrabold ${isActive ? 'text-white font-black' : 'text-brand-title font-extrabold'}`}>{am.name}</h4>
-                      <span className={`text-[11px] block mt-0.5 ${isActive ? 'text-teal-200' : 'text-brand-muted'}`}>{am.location}</span>
+                      <span className={`text-[11px] block mt-0.5 ${isActive ? 'text-teal-200' : 'text-brand-muted'}`}>
+                        {properties.find(p => p.id === selectedProperty)?.name || 'Property'} - {am.location}
+                      </span>
                     </div>
                   </div>
                 );
@@ -164,6 +182,13 @@ export default function AmenityView({
                 <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Assigned Complex</label>
                 {isLoading ? (
                   <div className="h-10 bg-brand-alternate animate-pulse rounded-xl w-full"></div>
+                ) : currentUser.role === 'Tenant' ? (
+                  <input
+                    type="text"
+                    value={properties.find(p => p.id === selectedProperty)?.name || 'My Property'}
+                    className="w-full px-3.5 py-2.5 bg-brand-alternate border border-brand-border rounded-xl text-sm text-brand-muted min-h-[44px] focus:outline-none"
+                    disabled
+                  />
                 ) : (
                   <select
                     value={selectedProperty}
@@ -275,7 +300,7 @@ export default function AmenityView({
             ) : userBookings.length > 0 ? (
               userBookings.map((b) => {
                 const isCreator = b.user === currentUser.name;
-                const propName = properties.find(p => p.id === b.propertyId)?.name || 'Summit Heights';
+                const propName = properties.find(p => p.id === b.propertyId)?.name || 'Property';
                 
                 return (
                   <div key={b.id} className="py-3.5 flex justify-between items-start first:pt-0 last:pb-0 font-sans border-b last:border-b-0 border-brand-border">
@@ -289,10 +314,59 @@ export default function AmenityView({
                     </div>
 
                     <div className="flex flex-col items-end space-y-2">
-                       <span className="text-[10px] font-mono font-bold bg-teal-500/10 text-primary-teal dark:text-secondary-teal border border-teal-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
-                        CONFIRMED
-                      </span>
-                      {isCreator && (
+                      {b.status === 'IN_USE' ? (
+                        <span className="text-[10px] font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
+                          IN USE
+                        </span>
+                      ) : b.status === 'COMPLETED' ? (
+                        <span className="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
+                          COMPLETED
+                        </span>
+                      ) : b.status === 'NO_SHOW' ? (
+                        <span className="text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
+                          NO SHOW
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono font-bold bg-teal-500/10 text-primary-teal dark:text-secondary-teal border border-teal-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
+                          CONFIRMED
+                        </span>
+                      )}
+
+                      {(b.status === 'booked' || b.status === 'APPROVED') && onCheckInBooking && (
+                        <button
+                          onClick={() => {
+                            onCheckInBooking(b.id);
+                            setNotification({
+                              type: 'success',
+                              message: 'Check-in processed successfully!'
+                            });
+                            setTimeout(() => setNotification(null), 4000);
+                          }}
+                          className="text-[10px] text-teal-600 hover:text-teal-700 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
+                          aria-label="Check in to booking"
+                        >
+                          <span>🔑 Check In</span>
+                        </button>
+                      )}
+
+                      {b.status === 'IN_USE' && onCheckOutBooking && (
+                        <button
+                          onClick={() => {
+                            onCheckOutBooking(b.id);
+                            setNotification({
+                              type: 'success',
+                              message: 'Check-out processed successfully!'
+                            });
+                            setTimeout(() => setNotification(null), 4000);
+                          }}
+                          className="text-[10px] text-amber-600 hover:text-amber-700 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
+                          aria-label="Check out of booking"
+                        >
+                          <span>🚪 Check Out</span>
+                        </button>
+                      )}
+
+                      {isCreator && (b.status === 'booked' || b.status === 'APPROVED') && (
                         <button
                           onClick={() => {
                             onCancelBooking(b.id);
@@ -322,7 +396,7 @@ export default function AmenityView({
                 <div>
                   <h5 className="font-extrabold text-brand-title text-xs">No reservations scheduled</h5>
                   <p className="text-[10px] text-brand-body max-w-[200px] mx-auto mt-1 leading-normal font-light">
-                    Your active booking lists are clear. Configure parameters above to block Skyline Pool or Tennis Court slots.
+                    Your active booking lists are clear. Configure parameters above to reserve Skyline Pool or Tennis Court slots.
                   </p>
                 </div>
               </div>

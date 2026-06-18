@@ -48,7 +48,8 @@ export default function MaintenanceView({
   // Form Fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [propertyId, setPropertyId] = useState(properties[0]?.id || '');
+  const tenantProperty = currentUser.role === 'Tenant' && currentUser.propertyId ? currentUser.propertyId : '';
+  const [propertyId, setPropertyId] = useState(tenantProperty || properties[0]?.id || '');
   const [unitNumber, setUnitNumber] = useState('');
   const [priority, setPriority] = useState<MaintenancePriority>('Medium');
   const [category, setCategory] = useState('Plumbing');
@@ -67,6 +68,11 @@ export default function MaintenanceView({
 
   // Filter Maintenance
   const filteredMaintenance = maintenance.filter(req => {
+    // Tenant filter: only show requests created by the active tenant
+    if (currentUser.role === 'Tenant' && req.createdBy !== currentUser.name) {
+      return false;
+    }
+
     const matchesSearch = 
       req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -637,16 +643,25 @@ export default function MaintenanceView({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Assign Estate complex</label>
-                  <select
-                    value={propertyId}
-                    onChange={(e) => setPropertyId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-brand-alternate border border-brand-border rounded-xl text-sm focus:outline-none focus:border-primary-teal text-brand-body min-h-[44px]"
-                  >
-                    {properties.map(p => (
-                      <option key={p.id} value={p.id} className="bg-brand-surface text-brand-title">{p.name}</option>
-                    ))}
-                  </select>
+                  <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Property Complex</label>
+                  {currentUser.role === 'Tenant' ? (
+                    <input
+                      type="text"
+                      value={properties.find(p => p.id === propertyId)?.name || 'My Property'}
+                      className="w-full px-3.5 py-2.5 bg-brand-alternate border border-brand-border rounded-xl text-sm text-brand-muted min-h-[44px] focus:outline-none"
+                      disabled
+                    />
+                  ) : (
+                    <select
+                      value={propertyId}
+                      onChange={(e) => setPropertyId(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-brand-alternate border border-brand-border rounded-xl text-sm focus:outline-none focus:border-primary-teal text-brand-body min-h-[44px]"
+                    >
+                      {properties.map(p => (
+                        <option key={p.id} value={p.id} className="bg-brand-surface text-brand-title">{p.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div className="space-y-1">

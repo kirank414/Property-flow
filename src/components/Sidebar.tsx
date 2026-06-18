@@ -25,13 +25,27 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
     { id: 'properties', label: 'Properties Index', icon: Building2 },
     { id: 'maintenance', label: 'Repair Dispatch', icon: Wrench, badge: 'activeRequests' },
     { id: 'amenities', label: 'Facility Booking', icon: Calendar },
-    { id: 'analytics', label: 'Portfolio KPIs', icon: TrendingUp },
-    { id: 'monitor', label: 'Live Core Monitor', icon: Activity },
+    { id: 'analytics', label: 'Platform KPIs', icon: TrendingUp },
+    { id: 'monitor', label: 'Real-Time Monitoring', icon: Activity },
     { id: 'profile', label: 'Personal Space', icon: User }
   ];
 
   // Admin access control logic
   const isAuthorizedForAdmin = currentUser.role === 'Admin';
+
+  const filteredMenuItems = menuItems.filter(item => {
+    if (currentUser.role === 'Tenant') {
+      return ['dashboard', 'maintenance', 'amenities', 'profile'].includes(item.id);
+    }
+    if (currentUser.role === 'Staff') {
+      return ['dashboard', 'maintenance', 'amenities', 'monitor', 'profile'].includes(item.id);
+    }
+    if (currentUser.role === 'Manager') {
+      return ['dashboard', 'properties', 'maintenance', 'amenities', 'analytics', 'monitor', 'profile'].includes(item.id);
+    }
+    // Admin sees all items
+    return true;
+  });
   
   return (
     <aside className="w-full md:w-64 bg-slate-900 dark:bg-[#111827] text-slate-100 flex flex-col md:h-screen sticky top-0 md:sticky border-r border-slate-800 dark:border-[#334155] shrink-0 z-30">
@@ -71,7 +85,7 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
 
       {/* Navigation Links */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
+        {filteredMenuItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
           return (

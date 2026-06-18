@@ -6,6 +6,9 @@ export interface User {
   email: string;
   role: Role;
   avatarUrl?: string;
+  avatar?: string; // Add fallback
+  phone?: string;
+  unit?: string;
   propertyId?: string; // For tenants, which property they belong to
 }
 
@@ -13,12 +16,16 @@ export interface Property {
   id: string;
   name: string;
   address: string;
-  type: 'Residential' | 'Commercial' | 'Retail';
+  type: string; // Residential, Commercial, Retail, Mixed-Use
   units: number;
-  occupancy: number; // e.g. 94 for 94%
+  occupancy: number; // occupancy is required
+  occupancyRate?: number;
   image: string;
-  manager: string;
+  manager?: string; // optional to fit data.ts
   amenities: string[];
+  ownerName?: string;
+  revenue?: number;
+  activeRequests?: number;
 }
 
 export type MaintenancePriority = 'Low' | 'Medium' | 'High' | 'Urgent';
@@ -29,16 +36,23 @@ export interface MaintenanceRequest {
   title: string;
   description: string;
   propertyId: string;
-  unitNumber: string;
+  propertyName?: string;
+  unitNumber: string; // Required to satisfy views compiler check
+  unit?: string;
   priority: MaintenancePriority;
   status: MaintenanceStatus;
   createdBy: string;
+  createdById?: string;
   createdAt: string;
+  updatedAt?: string;
   assignedTo?: string;
+  assignedToId?: string;
   category: string;
+  timeline?: any[];
+  comments?: any[];
 }
 
-export type BookingStatus = 'pending' | 'booked' | 'cancelled';
+export type BookingStatus = 'pending' | 'booked' | 'cancelled' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'IN_USE' | 'COMPLETED' | 'NO_SHOW';
 
 export interface AppNotification {
   id: string;
@@ -60,4 +74,45 @@ export interface BookingSlot {
   end: string;
   status: BookingStatus;
   price?: number;
+  actualCheckInAt?: string | null;
+  actualCheckOutAt?: string | null;
+}
+
+// Additional missing types used in data.ts
+export interface Amenity {
+  id: string;
+  name: string;
+  description: string;
+  capacity: number;
+  location: string;
+  image: string;
+  rules: string[];
+  activeBookings: number;
+  operatingHours: string;
+}
+
+export interface Booking {
+  id: string;
+  amenityId: string;
+  amenityName: string;
+  userName: string;
+  userId: string;
+  unit: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: 'Confirmed' | 'Pending' | 'Cancelled';
+  purpose: string;
+  guestsCount: number;
+  createdAt: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  type: 'maintenance' | 'booking' | 'system' | 'user';
+  message: string;
+  user: string;
+  role: string;
+  time: string;
+  avatar: string;
 }

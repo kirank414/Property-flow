@@ -1,4 +1,4 @@
-# PropertyFlow Enterprise Frontend Specification & Freeze Blueprint
+# Zillow Enterprise Frontend Specification & Freeze Blueprint
 > **System Status**: Pre-Backend Architecture Gold Standard Frozen.
 
 This document serves as the absolute blueprint for engineering, audits, design validations, and backend wiring. Benchmark-tested against Vercel, Stripe, and Linear dashboards.
@@ -75,7 +75,7 @@ All frontend state routines are structured to immediately hook into **REST / Exp
 * **Request Payload**:
   ```json
   {
-    "email": "marcus@propertyflow.com",
+    "email": "marcus@zillow.com",
     "password": "hashed_pass_parameter"
   }
   ```
@@ -86,7 +86,7 @@ All frontend state routines are structured to immediately hook into **REST / Exp
     "user": {
       "id": "2",
       "name": "Marcus Brody",
-      "email": "marcus@propertyflow.com",
+      "email": "marcus@zillow.com",
       "role": "Manager",
       "avatarUrl": "https://images.unsplash.com/photo-..."
     }

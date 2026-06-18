@@ -1,0 +1,237 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+model User {
+  id                   String               @id @default(uuid())
+  email                String
+  passwordHash         String               @map("password_hash")
+  firstName            String               @map("first_name")
+  lastName             String               @map("last_name")
+  phone                String
+  avatarUrl            String?              @map("avatar_url")
+  propertyId           String?              @map("property_id")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @default(now()) @updatedAt @map("updated_at")
+  deletedAt            DateTime?            @map("deleted_at")
+
+  // Relations
+  property             Property?            @relation("PropertyTenants", fields: [propertyId], references: [id], onDelete: SetNull)
+  roles                UserRole[]
+  properties           Property[]
+  submittedRequests    MaintenanceRequest[] @relation("TenantRequests")
+  assignedRequests     MaintenanceRequest[] @relation("TechnicianRequests")
+  bookings             AmenityBooking[]
+  receivedNotifications Notification[]      @relation("NotificationRecipient")
+  createdNotifications Notification[]       @relation("NotificationCreator")
+  historyPerformed     MaintenanceRequestHistory[]
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
+
+  // Relations
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
+
+  // Relations
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId    String   @map("user_id")
+  roleId    String   @map("role_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Property {
+  id        String         @id @default(uuid())
+  name      String
+  address   String
+  type             String         @default("Residential")
+  imageUrl         String?        @map("image_url")
+  ownerId          String         @map("owner_id")
+  status           String         @default("ACTIVE")
+  units            Int            @default(50)
+  occupancyRate    Float          @default(90) @map("occupancy_rate")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime?      @map("deleted_at")
+
+  owner     User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  requests  MaintenanceRequest[]
+  amenities Amenity[]
+  tenants   User[]         @relation("PropertyTenants")
+
+  @@map("properties")
+}
+
+model MaintenanceRequest {
+  id                   String               @id @default(uuid())
+  propertyId           String               @map("property_id")
+  tenantId             String               @map("tenant_id")
+  assignedTechnicianId String?              @map("assigned_technician_id")
+  title                String
+  description          String
+  category             String               @default("General")
+  status               String               @default("PENDING")
+  priority             String               @default("MEDIUM")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @default(now()) @updatedAt @map("updated_at")
+  resolvedAt           DateTime?            @map("resolved_at")
+  deletedAt            DateTime?            @map("deleted_at")
+
+  property             Property             @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  tenant               User                 @relation("TenantRequests", fields: [tenantId], references: [id], onDelete: Restrict)
+  technician           User?                @relation("TechnicianRequests", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
+  history              MaintenanceRequestHistory[]
+
+  @@map("maintenance_requests")
+}
+
+model MaintenanceRequestHistory {
+  id                   String               @id @default(uuid())
+  maintenanceRequestId String               @map("maintenance_request_id")
+  oldStatus            String?              @map("old_status")
+  newStatus            String?              @map("new_status")
+  oldPriority          String?              @map("old_priority")
+  newPriority          String?              @map("new_priority")
+  oldTechnicianId      String?              @map("old_technician_id")
+  newTechnicianId      String?              @map("new_technician_id")
+  actionType           String               @map("action_type")
+  performedBy          String               @map("performed_by")
+  notes                String?
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  request              MaintenanceRequest   @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+  actor                User                 @relation(fields: [performedBy], references: [id], onDelete: Restrict)
+
+  @@map("maintenance_request_history")
+}
+
+model Amenity {
+  id          String        @id @default(uuid())
+  propertyId  String        @map("property_id")
+  name        String
+  description String?
+  capacity    Int
+  location    String?
+  imageUrl    String?       @map("image_url")
+  rules       String        @default("[]")
+  operatingHours String?    @map("operating_hours")
+  status      String        @default("ACTIVE")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  property    Property      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  bookings    AmenityBooking[]
+
+  @@map("amenities")
+}
+
+model AmenityBooking {
+  id        String        @id @default(uuid())
+  amenityId String        @map("amenity_id")
+  tenantId  String        @map("tenant_id")
+  startTime DateTime      @map("start_time")
+  endTime   DateTime      @map("end_time")
+  status    String        @default("PENDING")
+  purpose   String?
+  guestsCount Int         @default(1) @map("guests_count")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at")
+  actualCheckInAt  DateTime?     @map("actual_check_in_at")
+  actualCheckOutAt DateTime?     @map("actual_check_out_at")
+  checkedInBy      String?       @map("checked_in_by")
+  checkedOutBy     String?       @map("checked_out_by")
+  deletedAt        DateTime?     @map("deleted_at")
+
+  amenity   Amenity       @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+  tenant    User          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@map("amenity_bookings")
+}
+
+model Notification {
+  id                    String            @id @default(uuid())
+  userId                String            @map("user_id")
+  createdBy             String?           @map("created_by")
+  title                 String
+  message               String
+  type                  String            @default("INFO")
+  channel               String            @default("IN_APP")
+  status                String            @default("PENDING")
+  deliveryAttempts      Int               @default(0) @map("delivery_attempts")
+  lastDeliveryAttemptAt DateTime?         @map("last_delivery_attempt_at")
+  readAt                DateTime?         @map("read_at")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  deletedAt             DateTime?         @map("deleted_at")
+
+  user                  User              @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  creator               User?             @relation("NotificationCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  entity    String
+  entityId  String   @map("entity_id")
+  details   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

@@ -1,0 +1,162 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Zillow Backend API Specs",
+    "version": "1.0.0",
+    "description": "Production-ready REST API documentation for Zillow"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API Gateway Route"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Registers a new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "firstName", "lastName", "phone"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 8 },
+                  "firstName": { "type": "string" },
+                  "lastName": { "type": "string" },
+                  "phone": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User registered successfully" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "User authentication endpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful, return tokens" }
+        }
+      }
+    },
+    "/properties": {
+      "post": {
+        "summary": "Creates a new property",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "address", "ownerId"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "address": { "type": "string" },
+                  "ownerId": { "type": "string", "format": "uuid" },
+                  "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "MAINTENANCE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Property created successfully" }
+        }
+      },
+      "get": {
+        "summary": "Retrieves paginated properties list",
+        "responses": {
+          "200": { "description": "List of properties" }
+        }
+      }
+    },
+    "/maintenance": {
+      "post": {
+        "summary": "Files a maintenance request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["propertyId", "tenantId", "title", "description"],
+                "properties": {
+                  "propertyId": { "type": "string", "format": "uuid" },
+                  "tenantId": { "type": "string", "format": "uuid" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "EMERGENCY"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Maintenance request submitted" }
+        }
+      }
+    },
+    "/bookings": {
+      "post": {
+        "summary": "Submits an amenity booking request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amenityId", "tenantId", "startTime", "endTime"],
+                "properties": {
+                  "amenityId": { "type": "string", "format": "uuid" },
+                  "tenantId": { "type": "string", "format": "uuid" },
+                  "startTime": { "type": "string", "format": "date-time" },
+                  "endTime": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Booking request filed" },
+          "409": { "description": "Exclusion check failure: Overlapping slot booked" }
+        }
+      }
+    }
+  }
+}

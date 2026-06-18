@@ -7,9 +7,12 @@ import {
   Mail, 
   CheckCircle,
   HelpCircle,
-  KeyRound
+  KeyRound,
+  ShieldCheck,
+  EyeOff
 } from 'lucide-react';
 import { User, Role } from '../types.ts';
+import { AuthService } from '../api/services';
 
 interface LoginPageProps {
   users: User[];
@@ -21,15 +24,26 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
   const [activeTabRole, setActiveTabRole] = useState<Role>('Manager');
   const [email, setEmail] = useState('marcus@propertyflow.com');
   const [password, setPassword] = useState('••••••••');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+
+  // Authentication screen states
+  const [mode, setMode] = useState<'login' | 'forgot' | 'reset'>('login');
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSubmitted, setForgotSubmitted] = useState(false);
+  
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetSubmitted, setResetSubmitted] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   // Quick select helper profiles
   const profiles: Record<Role, { email: string; name: string; desc: string; authScope: string }> = {
     Admin: {
       email: 'eleanor@propertyflow.com',
       name: 'Eleanor Vance',
-      desc: 'Owner authorization level. Complete security logs, configuration panels, database metrics access.',
-      authScope: 'Global root level access controls status.'
+      desc: 'Owner authorization level. Manage users, properties, amenities, and platform operations.',
+      authScope: 'Global platform level access controls.'
     },
     Manager: {
       email: 'marcus@propertyflow.com',
@@ -47,7 +61,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
       email: 'sarah@propertyflow.com',
       name: 'Sarah Connor',
       desc: 'Rental occupant profile. Submits repair tickets, reserves skyline pools/court facilities.',
-      authScope: 'Summit Heights Suite 402 only.'
+      authScope: 'Dynamic assigned property suite.'
     }
   };
 
@@ -57,14 +71,74 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
     setPassword('••••••••');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Match simulated user
-    const matchedUser = users.find(u => u.role === activeTabRole);
-    if (matchedUser) {
-      onLogin(matchedUser);
-    } else {
-      alert('Mock Error: Simulated authentication scope failure.');
+    setErrorMessage(null);
+    setIsAuthenticating(true);
+
+    const actualPassword = password === '••••••••' ? 'password123' : password;
+
+    try {
+      const userDto = await AuthService.login({ email, password: actualPassword });
+      
+      let role: 'Admin' | 'Manager' | 'Staff' | 'Tenant' = 'Tenant';
+      if (userDto.role === 'ADMIN') role = 'Admin';
+      else if (userDto.role === 'MANAGER') role = 'Manager';
+      else if (userDto.role === 'STAFF') role = 'Staff';
+
+      const user: User = {
+        id: userDto.id,
+        email: userDto.email,
+        name: `${userDto.firstName} ${userDto.lastName}`,
+        role,
+        avatarUrl: userDto.avatarUrl || undefined,
+        propertyId: userDto.propertyId || undefined,
+      };
+
+      onLogin(user);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Authentication failed.';
+      setErrorMessage(msg);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    try {
+      await AuthService.forgotPassword(forgotEmail);
+      setForgotSubmitted(true);
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message);
+    }
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+      setResetError('Password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
+    try {
+      await AuthService.resetPassword({ token: 'dummy-token', newPassword });
+      setResetError(null);
+      setResetSubmitted(true);
+      setTimeout(() => {
+        setResetSubmitted(false);
+        setMode('login');
+        setPassword(newPassword);
+      }, 2000);
+    } catch (err: any) {
+      setResetError(err.response?.data?.message || err.message);
     }
   };
 
@@ -92,37 +166,37 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
         {/* Feature Slider Mockup */}
         <div className="space-y-6 relative z-10 max-w-lg">
           <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-primary-teal/25 border border-primary-teal/30 text-accent-teal uppercase tracking-widest inline-block leading-none">
-            Enterprise Single Sign-On
+            Secure Sign-On Gateway
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-            Seamless operational flow.<br />Under 100% security SLA.
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight font-sans">
+            Secure Access to PropertyFlow
           </h2>
           <p className="text-sm font-light text-slate-300 leading-relaxed font-sans">
-            Eliminate endless notification gaps, unlogged emails, and scheduling overlaps. Sign in to instantly manage premium rentals, incident tracking timelines, and facility availability bookings.
+            Sign in to manage maintenance requests, amenity bookings, and real-time property operations.
           </p>
 
-          <div className="bg-[#1E293B]/60 p-5 rounded-2xl border border-[#334155] space-y-3.5">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold text-slate-200">System Integration Status</span>
-              <span className="text-accent-teal font-mono">100% Operational</span>
+          <div className="bg-[#1E293B]/60 p-5 rounded-2xl border border-[#334155] space-y-4 font-sans">
+            <div className="flex items-center justify-between text-xs text-slate-400 border-b border-[#334155]/60 pb-2">
+              <span className="font-bold text-slate-200 uppercase tracking-wider">Platform Capabilities</span>
             </div>
-            <div className="h-1 bg-[#111827] rounded-full overflow-hidden">
-              <div className="h-full bg-[#14B8A6] w-full rounded-full"></div>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-[10px] text-slate-400">
-              <div>
-                <span className="font-mono text-white font-bold block">1.4ms</span>
-                <span className="block mt-0.5 text-slate-500">Node Sync API</span>
-              </div>
-              <div className="border-x border-[#334155]">
-                <span className="font-mono text-white font-bold block">99.99%</span>
-                <span className="block mt-0.5 text-slate-500">Uptime Pool</span>
-              </div>
-              <div>
-                <span className="font-mono text-white font-bold block">0 errors</span>
-                <span className="block mt-0.5 text-slate-500">Core Engine</span>
-              </div>
-            </div>
+            <ul className="space-y-2.5 text-xs text-slate-300">
+              <li className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#14B8A6]"></div>
+                <span>Secure Authentication</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#14B8A6]"></div>
+                <span>Real-Time Status Updates</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#14B8A6]"></div>
+                <span>Maintenance Tracking</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#14B8A6]"></div>
+                <span>Amenity Booking Management</span>
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -133,7 +207,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
         </div>
       </div>
 
-      {/* Right Column (Standard Login form) */}
+      {/* Right Column */}
       <div className="col-span-12 lg:col-span-6 p-6 sm:p-12 md:p-16 lg:p-20 flex flex-col justify-between bg-[#0F172A] text-[#CBD5E1]">
         
         {/* Mobile brand header (only visible when Left column is hidden) */}
@@ -164,129 +238,302 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
             </button>
           </div>
 
-          <div className="space-y-2">
-            <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Security Sign-In</h1>
-            <p className="text-sm text-[#CBD5E1] font-light">
-              Select a simulated test role below to immediately populate verified mock credential parameters.
-            </p>
-          </div>
+          {mode === 'login' && (
+            <>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Security Sign-In</h1>
+                <p className="text-sm text-[#CBD5E1] font-light">
+                  Select a simulated test role below to immediately populate verified mock credential parameters.
+                </p>
+              </div>
 
-          {/* Quick simulation helper widget */}
-          <div className="bg-[#1E293B] border border-[#334155] rounded-xl p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-[#14B8A6] uppercase tracking-wider flex items-center space-x-1 font-sans">
-                <span>⚡</span> <span>Demo Role Simulator</span>
-              </span>
-              <span className="text-[10px] text-[#14B8A6] bg-[#14B8A6]/10 px-2 py-0.5 rounded font-mono uppercase font-bold animate-pulse border border-[#14B8A6]/20">
-                Click to Test
-              </span>
-            </div>
+              {/* Quick simulation helper widget */}
+              <div className="bg-[#1E293B] border border-[#334155] rounded-xl p-4 space-y-3">
+                <div className="flex justify-between items-center font-sans">
+                  <span className="text-xs font-bold text-[#14B8A6] uppercase tracking-wider flex items-center space-x-1">
+                    <span>⚡</span> <span>Select User Role</span>
+                  </span>
+                  <span className="text-[10px] text-[#14B8A6] bg-[#14B8A6]/10 px-2 py-0.5 rounded font-mono uppercase font-bold animate-pulse border border-[#14B8A6]/20">
+                    Click to Test
+                  </span>
+                </div>
 
-            <div className="grid grid-cols-4 gap-1.5 font-sans">
-              {(['Manager', 'Admin', 'Staff', 'Tenant'] as Role[]).map((r) => (
+                <div className="grid grid-cols-4 gap-1.5 font-sans">
+                  {(['Manager', 'Admin', 'Staff', 'Tenant'] as Role[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      id={`quick-login-${r.toLowerCase()}`}
+                      onClick={() => selectQuickRole(r)}
+                      className={`py-2 text-[10px] sm:text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${activeTabRole === r ? 'bg-[#14B8A6] text-white border-[#14B8A6] shadow-sm' : 'bg-[#111827] text-[#CBD5E1] border-[#334155] hover:bg-[#1E293B]'}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quick role capabilities preview */}
+                <div className="bg-[#111827] border border-[#334155] rounded-lg p-3 text-xs text-[#CBD5E1] space-y-1">
+                  <div className="flex justify-between items-center bg-[#1E293B] p-1.5 rounded-md">
+                    <span className="font-extrabold text-[#F8FAFC]">
+                      {activeTabRole === 'Manager' && '🏨 Property Manager Profile'}
+                      {activeTabRole === 'Admin' && '🛡️ System Administrator Profile'}
+                      {activeTabRole === 'Staff' && '🛠️ Maintenance Service Officer'}
+                      {activeTabRole === 'Tenant' && '🔑 Registered Rental Tenant'}
+                    </span>
+                    <span className="text-[9px] font-mono text-[#14B8A6] font-bold uppercase">{activeTabRole} LEVEL</span>
+                  </div>
+                  <p className="mt-1 font-sans leading-normal text-[#CBD5E1] text-[11px]">{profiles[activeTabRole].desc}</p>
+                  <div className="text-[10px] text-[#94A3B8] font-medium">
+                    <span className="font-bold text-[#CBD5E1]">Scope:</span> {profiles[activeTabRole].authScope}
+                  </div>
+                </div>
+              </div>
+
+              {/* Login Form */}
+              {errorMessage && (
+                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-450 text-xs p-3 rounded-xl font-sans">
+                  {errorMessage}
+                </div>
+              )}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                
+                {/* Email Address */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      id="login-email-input"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@propertyflow.com"
+                      className="w-full pl-10 pr-4 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all font-sans"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="space-y-1.5 font-sans">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
+                      Password
+                    </label>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setForgotEmail(email);
+                        setForgotSubmitted(false);
+                        setMode('forgot');
+                      }}
+                      className="text-xs text-[#14B8A6] hover:text-[#14B8A6]/90 font-semibold cursor-pointer"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      id="login-password-input"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-10 pr-10 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-white"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Remember me toggle */}
+                <div className="flex items-center justify-between pt-1">
+                  <label className="flex items-center space-x-2.5 cursor-pointer text-sm font-light text-[#CBD5E1] select-none font-sans">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 text-[#14B8A6] bg-[#111827] border-[#334155] rounded focus:ring-[#14B8A6] cursor-pointer"
+                    />
+                    <span>Remember this device</span>
+                  </label>
+                </div>
+
+                {/* CTA action trigger button */}
                 <button
-                  key={r}
-                  type="button"
-                  id={`quick-login-${r.toLowerCase()}`}
-                  onClick={() => selectQuickRole(r)}
-                  className={`py-2 text-[10px] sm:text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${activeTabRole === r ? 'bg-[#14B8A6] text-white border-[#14B8A6] shadow-sm' : 'bg-[#111827] text-[#CBD5E1] border-[#334155] hover:bg-[#1E293B]'}`}
+                  type="submit"
+                  id="submit-login-btn"
+                  className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md shadow-primary-teal/15 hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
                 >
-                  {r}
+                  <span>Authenticate as {activeTabRole}</span>
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </button>
-              ))}
-            </div>
+              </form>
+            </>
+          )}
 
-            {/* Quick role capabilities preview */}
-            <div className="bg-[#111827] border border-[#334155] rounded-lg p-3 text-xs text-[#CBD5E1] space-y-1">
-              <div className="flex justify-between items-center bg-[#1E293B] p-1.5 rounded-md">
-                <span className="font-extrabold text-[#F8FAFC]">
-                  {activeTabRole === 'Manager' && '🏨 Property Manager Profile'}
-                  {activeTabRole === 'Admin' && '🛡️ System Administrator Profile'}
-                  {activeTabRole === 'Staff' && '🛠️ Maintenance Service Officer'}
-                  {activeTabRole === 'Tenant' && '🔑 Registered Rental Tenant'}
-                </span>
-                <span className="text-[9px] font-mono text-[#14B8A6] font-bold uppercase">{activeTabRole} LEVEL</span>
+          {mode === 'forgot' && (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Recover Access</h1>
+                <p className="text-sm text-[#CBD5E1] font-light">
+                  Input your security work email, and we will dispatch a passcode reset link.
+                </p>
               </div>
-              <p className="mt-1 font-sans leading-normal text-[#CBD5E1] text-[11px]">{profiles[activeTabRole].desc}</p>
-              <div className="text-[10px] text-[#94A3B8] font-medium">
-                <span className="font-bold text-[#CBD5E1]">Scope:</span> {profiles[activeTabRole].authScope}
-              </div>
-            </div>
-          </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {/* Email Address */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
-                Work Security Email
-              </label>
-              <div className="relative">
-                <Mail className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  id="login-email-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@propertyflow.com"
-                  className="w-full pl-10 pr-4 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all font-sans"
-                  required
-                />
-              </div>
-            </div>
+              {forgotSubmitted ? (
+                <div className="bg-[#1E293B] border border-[#334155] p-6 rounded-2xl text-center space-y-4 animate-in fade-in">
+                  <div className="w-12 h-12 bg-[#14B8A6]/20 border border-[#14B8A6]/30 text-[#14B8A6] rounded-full flex items-center justify-center mx-auto text-xl">
+                    📧
+                  </div>
+                  <div className="space-y-1.5">
+                    <h4 className="font-extrabold text-[#F8FAFC] text-sm">Dispatched Verification Link</h4>
+                    <p className="text-xs text-[#CBD5E1] leading-relaxed font-light">
+                      A secure gateway connection key has been sent to <span className="font-semibold text-white">{forgotEmail}</span>. Follow the directions in the message to finish.
+                    </p>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <button
+                      onClick={() => setMode('reset')}
+                      className="w-full py-2.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-xs rounded-xl shadow-sm cursor-pointer transition-colors"
+                    >
+                      Enter Simulation Reset Screen
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
+                      Work Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="name@propertyflow.com"
+                        className="w-full pl-10 pr-4 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all font-sans"
+                        required
+                      />
+                    </div>
+                  </div>
 
-            {/* Password */}
-            <div className="space-y-1.5 font-sans">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
-                  Security Password
-                </label>
-                <button 
-                  type="button"
-                  onClick={() => alert("Simulated: Check work email files to restore code.")}
-                  className="text-xs text-[#14B8A6] hover:text-[#14B8A6]/90 font-semibold cursor-pointer"
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <span>Send Secure Recovery Link</span>
+                    <ArrowRight className="w-4 h-4 text-white" />
+                  </button>
+                </form>
+              )}
+
+              <div className="text-center">
+                <button
+                  onClick={() => setMode('login')}
+                  className="text-xs text-[#14B8A6] hover:text-[#14B8A6]/90 font-bold"
                 >
-                  Forgot password?
+                  ← Back to Security Sign-In
                 </button>
               </div>
-              <div className="relative">
-                <Lock className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  id="login-password-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
-                  required
-                />
-                <Eye className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" />
+            </div>
+          )}
+
+          {mode === 'reset' && (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Change Password</h1>
+                <p className="text-sm text-[#CBD5E1] font-light">
+                  Establish a new master passcode configuration for your credential envelope.
+                </p>
+              </div>
+
+              {resetSubmitted ? (
+                <div className="bg-[#1E293B] border border-[#334155] p-6 rounded-2xl text-center space-y-4 animate-in fade-in">
+                  <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/30 text-emerald-450 rounded-full flex items-center justify-center mx-auto text-xl">
+                    ✓
+                  </div>
+                  <div className="space-y-1.5">
+                    <h4 className="font-extrabold text-[#F8FAFC] text-sm">Passcode Reconfigured Successfully</h4>
+                    <p className="text-xs text-[#CBD5E1] leading-relaxed font-light">
+                      Your master security password configuration has been successfully updated. Redirecting to signature portal.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleResetSubmit} className="space-y-4">
+                  {resetError && (
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-sans">
+                      {resetError}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
+                      New Security Passcode
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Min 6 characters"
+                        className="w-full pl-10 pr-4 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
+                      Verify New Passcode
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-type password"
+                        className="w-full pl-10 pr-4 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <span>Save Master Passcode</span>
+                    <ArrowRight className="w-4 h-4 text-white" />
+                  </button>
+                </form>
+              )}
+
+              <div className="text-center">
+                <button
+                  onClick={() => setMode('login')}
+                  className="text-xs text-[#14B8A6] hover:text-[#14B8A6]/90 font-bold"
+                >
+                  Cancel and Return
+                </button>
               </div>
             </div>
-
-            {/* Remember me toggle */}
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center space-x-2.5 cursor-pointer text-sm font-light text-[#CBD5E1] select-none font-sans">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-[#14B8A6] bg-[#111827] border-[#334155] rounded focus:ring-[#14B8A6] cursor-pointer"
-                />
-                <span>Keep me signed in for 30 days</span>
-              </label>
-            </div>
-
-            {/* CTA action trigger button */}
-            <button
-              type="submit"
-              id="submit-login-btn"
-              className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md shadow-primary-teal/15 hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <span>Authenticate as {activeTabRole}</span>
-              <ArrowRight className="w-4 h-4 text-white" />
-            </button>
-          </form>
+          )}
 
         </div>
 

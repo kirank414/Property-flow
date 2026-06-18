@@ -37,136 +37,70 @@ export default function LandingPage({
   setTheme
 }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
+
   const [heroTab, setHeroTab] = useState<'analytics' | 'maintenance' | 'scheduling'>('analytics');
+  const [activeSection, setActiveSection] = useState<'home' | 'features' | 'pricing'>('home');
 
   const stats = [
     { 
-      label: 'PORTFOLIO EXPANSE', 
-      value: '14,820+', 
-      change: '+12% YoY growth',
-      icon: Building2,
-      trend: 'up'
-    },
-    { 
-      label: 'MAINTENANCE DISPATCH SLA', 
-      value: '99.4%', 
-      change: 'Under 2.4 hour response',
+      label: 'MAINTENANCE RESOLUTION TARGET', 
+      value: '≤ 48 Hours', 
+      change: 'Target Resolution Time',
       icon: Activity,
+      trend: 'stable'
+    },
+    { 
+      label: 'REQUEST COMPLETION RATE GOAL', 
+      value: '≥ 90%', 
+      change: 'Target Completion Rate',
+      icon: Check,
       trend: 'up'
     },
     { 
-      label: 'FACILITY BOOKING RATE', 
-      value: '94.8%', 
-      change: 'Peak resource yield',
+      label: 'AMENITY BOOKING CONFLICT GOAL', 
+      value: '0', 
+      change: 'Conflict-Free Booking Target',
       icon: Zap,
       trend: 'stable'
     },
     { 
-      label: 'TENANT RETENTION RATE', 
-      value: '98.2%', 
-      change: 'Based on 12k reviews',
-      icon: Users,
+      label: 'SYSTEM RESPONSE TIME GOAL', 
+      value: '≤ 2 Seconds', 
+      change: 'System Response Time Goal',
+      icon: Clock,
+      trend: 'up'
+    },
+    { 
+      label: 'USER SATISFACTION GOAL', 
+      value: '≥ 4 / 5', 
+      change: 'Target Satisfaction Score',
+      icon: Star,
       trend: 'up'
     }
   ];
 
   const features = [
     { 
-      title: 'Portfolio Intelligence Hub', 
-      description: 'Acquire real-time visualization of occupancy rate parameters, unit vacancies, average yield, and monthly collection ratios across multiple holding complexes in seconds.',
-      icon: TrendingUp,
-      status: 'Ready'
-    },
-    { 
-      title: 'Smart Dispatch Locker', 
-      description: 'Instantly file, assign, and track technical repair requests. Tenants get seamless status updates and staff can easily prioritize urgent safety orders.',
+      title: 'Real-Time Maintenance Tracking', 
+      description: 'Create maintenance requests, monitor progress, and receive real-time status updates. Improve visibility between tenants and property owners while reducing delays and communication gaps.',
       icon: Activity,
-      status: 'Live'
+      status: 'Maintenance Management'
     },
     { 
-      title: 'Automated Facility Coordinator', 
-      description: 'Streamline scheduling and eliminate reservation conflicts. Fully customized calendars for skyline pools, lounges, tennis courts, and conference centers.',
+      title: 'Amenity Booking Management', 
+      description: 'View amenity availability, reserve time slots, manage check-in and check-out activities, and prevent double-booking conflicts through centralized scheduling.',
       icon: Zap,
-      status: 'Integrated'
-    }
-  ];
-
-  const pricingPlans = [
-    {
-      name: 'Starter Suite',
-      price: billingCycle === 'monthly' ? 49 : 39,
-      description: 'Perfect for local landlords managing up to 25 premium units.',
-      features: [
-        'Up to 25 Managed Units',
-        'Standard Tenant Portal Access',
-        'Basic Repair Dispatch',
-        'Email Support (48h SLA)',
-        'Standard Facility Calendars'
-      ],
-      cta: 'Launch Initial Access',
-      popular: false
-    },
-    {
-      name: 'Professional Hub',
-      price: billingCycle === 'monthly' ? 129 : 99,
-      description: 'Comprehensive workflow automation tools for medium portfolios.',
-      features: [
-        'Unlimited Managed Units',
-        'Multi-User Role Permissions',
-        'Real-time Repair Dispatch',
-        'Interactive Facilities Coordinator',
-        'Advanced API Integration Access',
-        'Priority SLA Support (<4h SLA)'
-      ],
-      cta: 'Activate Professional Demo',
-      popular: true
-    },
-    {
-      name: 'Enterprise Matrix',
-      price: billingCycle === 'monthly' ? 299 : 239,
-      description: 'Corporate orchestration system for major holdings complexes.',
-      features: [
-        'Deep Multi-Property Matrices',
-        'Custom Embedded White-labeling',
-        'Advanced Predictive Core Logs',
-        'Full Security Information SSO',
-        'Dedicated Support Manager Desk',
-        '100% Guaranteed SLA Agreement'
-      ],
-      cta: 'Enquire Enterprise Suite',
-      popular: false
-    }
-  ];
-
-  const matrixFeatures = [
-    { name: 'Multi-Complex Dashboard', starter: true, pro: true, enterprise: true },
-    { name: 'Live Telemetry Integration', starter: false, pro: true, enterprise: true },
-    { name: 'Custom Amenities Reservation', starter: 'Up to 3', pro: 'Unlimited', enterprise: 'Unlimited' },
-    { name: 'Drywall & Mechanical Dispatch Engine', starter: 'Basic', pro: 'Advanced', enterprise: 'Automated' },
-    { name: 'Role Simulation Workspace', starter: false, pro: true, enterprise: true },
-    { name: 'Dedicated Infrastructure Support', starter: false, starterText: 'Self-serve', pro: 'Email (<4h)', enterprise: 'Instant Call & SLA' },
-    { name: 'Cloud SQL Database Backups', starter: 'Daily', pro: 'Continuous', enterprise: 'Real-time Replica' }
-  ];
-
-  const reviews = [
-    { 
-      name: 'Arthur Pendragon', 
-      role: 'Regional Landlord Director', 
-      company: 'Apex Property Group',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-      text: "PropertyFlow transformed our operational cycle. Tenant complaints dropped by 45% within three months of utilizing its smart dispatch flow. The executive metrics reporting tool is unmatched in simplicity.", 
-      rating: 5 
+      status: 'Amenity Management'
     },
     { 
-      name: 'Diana Prince', 
-      role: 'Senior Property Manager', 
-      company: 'Peachtree Estates Ltd',
-      image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
-      text: "The automated scheduling engine prevents double bookings on rooftop lounges perfectly. The role simulations are exceptionally precise for testing incident responses. Recommend for premium portfolios.", 
-      rating: 5 
+      title: 'Real-Time Operations Dashboard', 
+      description: 'Monitor maintenance activity, amenity usage, and operational status from a centralized dashboard designed for transparency and efficient property management.',
+      icon: BarChart3,
+      status: 'Dashboard Monitoring'
     }
   ];
+
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] font-sans selection:bg-[#CCFBF1] selection:text-[#0F766E] scroll-smooth antialiased transition-colors duration-200">
@@ -177,24 +111,29 @@ export default function LandingPage({
           <div className="flex justify-between h-full items-center">
             
             {/* Logo */}
-            <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => { setActiveSection('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
               <div className="w-9 h-9 bg-[#0F766E] rounded-xl flex items-center justify-center text-white shadow-md shadow-[#0F766E]/20">
                 <Building2 className="w-5 h-5 text-[#5EEAD4]" />
               </div>
               <span className="font-extrabold text-lg tracking-tight text-[#0F172A] dark:text-[#F8FAFC] font-sans">
-                Property<span className="text-[#0F766E] dark:text-[#14B8A6]">Flow</span>
-              </span>
-              <span className="hidden sm:inline-block text-[9px] font-mono bg-teal-50 dark:bg-[#14B8A6]/10 text-[#0F766E] dark:text-[#5EEAD4] border border-teal-100 dark:border-[#14B8A6]/20 font-bold px-2 py-0.5 rounded uppercase tracking-widest">
-                SaaS Enterprise
+                PropertyFlow
               </span>
             </div>
 
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex space-x-8 text-xs font-semibold uppercase tracking-wider text-[#64748B] dark:text-[#CBD5E1]">
-              <a href="#features" className="hover:text-[#0F766E] dark:hover:text-[#14B8A6] transition-colors">Platform Features</a>
-              <a href="#stats" className="hover:text-[#0F766E] dark:hover:text-[#14B8A6] transition-colors">Performance KPIs</a>
-              <a href="#pricing" className="hover:text-[#0F766E] dark:hover:text-[#14B8A6] transition-colors">Pricing Solutions</a>
-              <a href="#testimonials" className="hover:text-[#0F766E] dark:hover:text-[#14B8A6] transition-colors">Reviews</a>
+              <button 
+                onClick={() => setActiveSection('features')} 
+                className={`hover:text-[#0F766E] dark:hover:text-[#14B8A6] transition-colors bg-transparent border-0 cursor-pointer p-0 font-semibold text-xs uppercase tracking-wider focus:outline-none ${activeSection === 'features' ? 'text-[#0F766E] dark:text-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1]'}`}
+              >
+                Platform Features
+              </button>
+              <button 
+                onClick={() => setActiveSection('pricing')} 
+                className={`hover:text-[#0F766E] dark:hover:text-[#14B8A6] transition-colors bg-transparent border-0 cursor-pointer p-0 font-semibold text-xs uppercase tracking-wider focus:outline-none ${activeSection === 'pricing' ? 'text-[#0F766E] dark:text-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1]'}`}
+              >
+                System Modules
+              </button>
             </div>
 
             {/* Access Buttons */}
@@ -247,10 +186,18 @@ export default function LandingPage({
         {/* Mobile Navigation Panel */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-[#1E293B] border-b border-[#E2E8F0] dark:border-[#334155] p-5 space-y-4 shadow-xl">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-xs font-bold uppercase tracking-wide text-[#64748B] dark:text-[#CBD5E1] hover:text-[#0F766E] dark:hover:text-[#14B8A6]">Features</a>
-            <a href="#stats" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-xs font-bold uppercase tracking-wide text-[#64748B] dark:text-[#CBD5E1] hover:text-[#0F766E] dark:hover:text-[#14B8A6]">Performance KPIs</a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-xs font-bold uppercase tracking-wide text-[#64748B] dark:text-[#CBD5E1] hover:text-[#0F766E] dark:hover:text-[#14B8A6]">Pricing Solutions</a>
-            <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-xs font-bold uppercase tracking-wide text-[#64748B] dark:text-[#CBD5E1] hover:text-[#0F766E] dark:hover:text-[#14B8A6]">Reviews</a>
+            <button 
+              onClick={() => { setActiveSection('features'); setMobileMenuOpen(false); }} 
+              className={`block w-full text-left py-1 text-xs font-bold uppercase tracking-wide transition-colors bg-transparent border-0 cursor-pointer focus:outline-none ${activeSection === 'features' ? 'text-[#0F766E] dark:text-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:text-[#0F766E] dark:hover:text-[#14B8A6]'}`}
+            >
+              Features
+            </button>
+            <button 
+              onClick={() => { setActiveSection('pricing'); setMobileMenuOpen(false); }} 
+              className={`block w-full text-left py-1 text-xs font-bold uppercase tracking-wide transition-colors bg-transparent border-0 cursor-pointer focus:outline-none ${activeSection === 'pricing' ? 'text-[#0F766E] dark:text-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:text-[#0F766E] dark:hover:text-[#14B8A6]'}`}
+            >
+              System Modules
+            </button>
             
             {setTheme && (
               <div className="flex items-center justify-between py-1 px-1">
@@ -292,31 +239,32 @@ export default function LandingPage({
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden bg-gradient-to-b from-[#F8FAFC] to-[#F1F5F9] dark:from-[#0F172A] dark:to-[#111827] border-b border-[#E2E8F0] dark:border-[#334155]">
+      {(activeSection === 'home' || activeSection === 'features') && (
+        <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 lg:py-0 overflow-hidden bg-gradient-to-b from-[#F8FAFC] to-[#F1F5F9] dark:from-[#0F172A] dark:to-[#111827] border-b border-[#E2E8F0] dark:border-[#334155] lg:min-h-[600px] lg:h-[650px] lg:flex lg:items-center">
         
         {/* Subtle grid elements */}
         <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none"></div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-16 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full lg:h-full lg:flex lg:items-stretch">
+          <div className="w-full lg:grid lg:grid-cols-12 lg:gap-16 items-stretch relative">
             
             {/* Left Column Text & Buttons */}
-            <div className="lg:col-span-6 text-center lg:text-left space-y-6 sm:space-y-7">
+            <div className="lg:col-span-5 text-center lg:text-left space-y-6 sm:space-y-7 lg:py-16 lg:flex lg:flex-col lg:justify-center">
               
               <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full text-[10px] font-bold bg-teal-50 dark:bg-[#14B8A6]/10 border border-teal-100 dark:border-[#14B8A6]/20 text-[#0F766E] dark:text-[#5EEAD4] uppercase tracking-widest leading-none">
                 <Sparkles className="w-3.5 h-3.5 text-[#14B8A6]" />
-                <span>PropTech Enterprise System 2026</span>
+                <span>REAL-TIME PROPERTY MANAGEMENT PLATFORM</span>
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC] leading-[1.05] font-sans">
-                Portfolio Operations,<br />
+                Manage Properties, Maintenance<br />
                 <span className="text-[#0F766E] dark:text-[#14B8A6]">
-                  Made Simple & Elegant
+                  & Amenities In One Platform
                 </span>
               </h1>
               
               <p className="text-sm sm:text-base text-[#64748B] dark:text-[#CBD5E1] max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                Connect and automate operations at every asset scale. Unify multi-role dashboard panels, dispatch technical maintenance SLA requests, reserve shared amenities, and monitor telemetry feeds from one corporate deck.
+                PropertyFlow centralizes maintenance requests, amenity bookings, and real-time operational visibility in one platform. Improve transparency between tenants and property owners while reducing conflicts and manual coordination.
               </p>
               
               <div className="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4 pt-2">
@@ -339,125 +287,115 @@ export default function LandingPage({
               {/* Compliance Trust Flags */}
               <div className="pt-6 border-t border-[#E2E8F0] dark:border-[#334155] flex flex-wrap justify-center lg:justify-start gap-6 items-center text-[#64748B] dark:text-[#CBD5E1]">
                 <div className="flex items-center space-x-2">
-                  <ShieldCheck className="w-5 h-5 text-[#10B981]" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider font-mono">SOC-2 Type II Certified</span>
+                  <Activity className="w-5 h-5 text-[#10B981]" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider font-mono">SLA Target: ≤ 48h Resolution</span>
                 </div>
                 <div className="text-slate-300 dark:text-slate-700 hidden sm:block">|</div>
                 <div className="flex items-center space-x-2">
                   <Star className="w-4.5 h-4.5 text-[#F59E0B] fill-[#F59E0B]" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider font-mono">Top Rated Enterprise SaaS</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider font-mono">Satisfaction Goal: ≥ 4/5</span>
+                </div>
+                <div className="text-slate-300 dark:text-slate-700 hidden sm:block">|</div>
+                <div className="flex items-center space-x-2">
+                  <Check className="w-4.5 h-4.5 text-sky-500" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider font-mono">Completion Goal: ≥ 90%</span>
                 </div>
               </div>
 
             </div>
 
-            {/* Right Column: High Fidelity Interactive Custom Dashboard Mockup */}
-            <div className="mt-12 lg:mt-0 lg:col-span-6">
+            {/* Spacer Column for Desktop Grid Flow */}
+            <div className="hidden lg:block lg:col-span-7 h-full"></div>
+
+            {/* Mobile/Tablet Mockup (Normal flow layout, visible only on mobile/tablet) */}
+            <div className="mt-12 lg:hidden w-full">
               <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl border border-[#E2E8F0] dark:border-[#334155] overflow-hidden">
                 
                 {/* Simulated MacOS Browser Bar */}
-                <div className="bg-[#F1F5F9] dark:bg-[#111827] px-4 py-3 border-b border-[#E2E8F0] dark:border-[#334155] flex justify-between items-center select-none">
-                  <div className="flex items-center space-x-1.5">
-                    <span className="w-3 h-3 bg-red-400 rounded-full inline-block"></span>
-                    <span className="w-3 h-3 bg-yellow-400 rounded-full inline-block"></span>
-                    <span className="w-3 h-3 bg-green-400 rounded-full inline-block"></span>
+                <div className="bg-[#F1F5F9] dark:bg-[#111827] px-5 py-4 border-b border-[#E2E8F0] dark:border-[#334155] flex justify-between items-center select-none">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-3.5 h-3.5 bg-red-400 rounded-full inline-block"></span>
+                    <span className="w-3.5 h-3.5 bg-yellow-400 rounded-full inline-block"></span>
+                    <span className="w-3.5 h-3.5 bg-green-400 rounded-full inline-block"></span>
                   </div>
-                  <div className="px-3 py-0.5 bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-md text-[9px] font-mono text-[#64748B] dark:text-[#CBD5E1] w-64 truncate text-center">
-                    https://app.propertyflow.com/deck
+                  <div className="px-4 py-1 bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-md text-[11px] font-mono text-[#64748B] dark:text-[#CBD5E1] w-72 truncate text-center">
+                    https://app.propertyflow.io
                   </div>
-                  <div className="w-3"></div>
+                  <div className="w-3.5"></div>
                 </div>
 
                 {/* Sub-navigation tabs within hero mockup */}
                 <div className="flex border-b border-[#E2E8F0] dark:border-[#334155] bg-slate-50/50 dark:bg-[#111827]/40 justify-start">
                   <button 
-                    onClick={() => setHeroTab('analytics')}
-                    className={`px-4 py-3 text-xs font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-1.5 transition-colors cursor-pointer ${heroTab === 'analytics' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-2 border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
-                  >
-                    <BarChart3 className="w-3.5 h-3.5" />
-                    <span>Portfolio Analytics</span>
-                  </button>
-                  <button 
                     onClick={() => setHeroTab('maintenance')}
-                    className={`px-4 py-3 text-xs font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-1.5 transition-colors cursor-pointer ${heroTab === 'maintenance' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-2 border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
+                    className={`px-6 py-4 text-sm font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-2 transition-colors cursor-pointer ${heroTab === 'maintenance' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-[3px] border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
                   >
-                    <Activity className="w-3.5 h-3.5" />
-                    <span>Incident Dispatch</span>
+                    <Activity className="w-4.5 h-4.5" />
+                    <span>Maintenance Requests</span>
                   </button>
                   <button 
                     onClick={() => setHeroTab('scheduling')}
-                    className={`px-4 py-3 text-xs font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-1.5 transition-colors cursor-pointer ${heroTab === 'scheduling' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-2 border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
+                    className={`px-6 py-4 text-sm font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-2 transition-colors cursor-pointer ${heroTab === 'scheduling' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-[3px] border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
                   >
-                    <Zap className="w-3.5 h-3.5" />
-                    <span>Lounge Schedules</span>
+                    <Zap className="w-4.5 h-4.5" />
+                    <span>Amenity Bookings</span>
+                  </button>
+                  <button 
+                    onClick={() => setHeroTab('analytics')}
+                    className={`px-6 py-4 text-sm font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-2 transition-colors cursor-pointer ${heroTab === 'analytics' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-[3px] border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
+                  >
+                    <BarChart3 className="w-4.5 h-4.5" />
+                    <span>Real-Time Dashboard</span>
                   </button>
                 </div>
 
                 {/* Simulated Content Area in Hero Preview */}
-                <div className="p-5 sm:p-6 space-y-4">
+                <div className="p-6 sm:p-8 space-y-6">
                   {heroTab === 'analytics' && (
                     <div className="space-y-4 animate-fadeIn">
-                      <div className="flex justify-between items-center text-xs">
-                        <div>
-                          <span className="text-[10px] font-bold font-mono text-[#64748B] dark:text-[#94A3B8] uppercase block">TOTAL PORTFOLIO INTAKE</span>
-                          <span className="text-[#0F172A] dark:text-[#F8FAFC] font-extrabold text-sm">$184,400 / month</span>
-                        </div>
-                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold font-mono bg-emerald-50 dark:bg-emerald-950/20 text-[#10B981] dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 uppercase">
-                          ● SLA Normal
-                        </span>
+                      <div className="bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] p-4 rounded-xl">
+                        <div className="text-[10px] font-bold font-mono text-[#64748B] dark:text-[#94A3B8] uppercase">Maintenance Resolution Target</div>
+                        <div className="text-[#0F172A] dark:text-[#F8FAFC] font-extrabold text-base mt-0.5">≤ 48 Hours</div>
+                        <div className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-light mt-0.5">Target Resolution Time</div>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] p-3 rounded-xl">
-                          <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-medium block">Occupancy Rate</span>
-                          <span className="text-base font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-0.5 block">94.8% SLA</span>
-                          <span className="text-[9px] text-[#10B981] dark:text-[#10B981] font-semibold mt-1 block">↑ +3.2% vs Atlanta Avg</span>
-                        </div>
-                        <div className="bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] p-3 rounded-xl">
-                          <span className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-medium block">Active SLA Cases</span>
-                          <span className="text-base font-extrabold text-[#EF4444] mt-0.5 block">4 Pending</span>
-                          <span className="text-[9px] text-[#F59E0B] font-semibold mt-1 block">▲ Under response dispatch</span>
-                        </div>
+                      <div className="bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] p-4 rounded-xl">
+                        <div className="text-[10px] font-bold font-mono text-[#64748B] dark:text-[#94A3B8] uppercase">Request Completion Goal</div>
+                        <div className="text-[#0F172A] dark:text-[#F8FAFC] font-extrabold text-base mt-0.5">≥ 90%</div>
+                        <div className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-light mt-0.5">Completion Rate Target</div>
                       </div>
-
-                      {/* Micro Progress Bars */}
-                      <div className="p-3 bg-slate-50 dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl space-y-2">
-                        <div className="flex justify-between text-[11px]">
-                          <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">Summit Heights (Residential)</span>
-                          <span className="font-mono text-[#64748B] dark:text-[#CBD5E1] font-bold">96%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#0F766E] dark:bg-[#14B8A6] rounded-full" style={{ width: '96%' }}></div>
-                        </div>
+                      <div className="bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] p-4 rounded-xl">
+                        <div className="text-[10px] font-bold font-mono text-[#64748B] dark:text-[#94A3B8] uppercase">Amenity Booking Conflict Goal</div>
+                        <div className="text-[#0F172A] dark:text-[#F8FAFC] font-extrabold text-base mt-0.5">0</div>
+                        <div className="text-[10px] text-[#64748B] dark:text-[#94A3B8] font-light mt-0.5">Conflict-Free Booking Target</div>
                       </div>
                     </div>
                   )}
 
                   {heroTab === 'maintenance' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="flex justify-between items-center text-xs border-b border-[#E2E8F0] dark:border-[#334155] pb-2">
-                        <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">URGENT DISPATCH LOGS</span>
-                        <span className="text-[9px] font-mono text-[#0F766E] dark:text-[#14B8A6]">UPDATED AT 09:26</span>
+                    <div className="space-y-4 animate-fadeIn">
+                      <div className="flex justify-between items-center text-sm border-b border-[#E2E8F0] dark:border-[#334155] pb-3">
+                        <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wider">Active Maintenance Requests</span>
+                        <span className="text-[10px] font-mono text-[#0F766E] dark:text-[#14B8A6]">Real-Time Monitor</span>
                       </div>
 
-                      <div className="space-y-2 font-sans">
-                        <div className="p-3 bg-red-50/75 dark:bg-rose-950/25 border border-red-100 dark:border-rose-500/20 rounded-xl flex justify-between items-center">
-                          <div className="text-xs">
-                            <span className="font-bold text-red-955 dark:text-rose-200 block">Boiler overpressure warning</span>
-                            <span className="text-[10px] text-red-750 dark:text-rose-350 font-light block mt-0.5">Basement valve spike — Unit 402</span>
+                      <div className="space-y-3 font-sans">
+                        <div className="p-4 bg-red-50/75 dark:bg-rose-950/25 border border-red-100 dark:border-rose-500/20 rounded-xl flex justify-between items-center">
+                          <div className="text-sm">
+                            <span className="font-bold text-red-955 dark:text-rose-200 block">Maintenance Request</span>
+                            <span className="text-xs text-red-750 dark:text-rose-350 font-light block mt-0.5">Issue Description</span>
                           </div>
-                          <span className="bg-red-500 text-white font-mono text-[9px] px-2 py-0.5 rounded font-extrabold uppercase">
-                            Dispatched
+                          <span className="bg-red-500 text-white font-mono text-[10px] px-3 py-1 rounded font-extrabold uppercase">
+                            Pending
                           </span>
                         </div>
 
-                        <div className="p-3 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl flex justify-between items-center">
-                          <div className="text-xs">
-                            <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] block">AC electrical compressor replacement</span>
-                            <span className="text-[10px] text-[#64748B] dark:text-[#CBD5E1] font-light block mt-0.5">Assigned to tech Dave Miller</span>
+                        <div className="p-4 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl flex justify-between items-center">
+                          <div className="text-sm">
+                            <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] block">Maintenance Request</span>
+                            <span className="text-xs text-[#64748B] dark:text-[#CBD5E1] font-light block mt-0.5">Issue Description</span>
                           </div>
-                          <span className="bg-amber-150 dark:bg-amber-500/10 text-[#F59E0B] dark:text-amber-400 font-mono text-[9px] px-2 py-0.5 rounded font-bold uppercase border border-amber-200/50 dark:border-amber-500/20">
-                            Assigned
+                          <span className="bg-amber-150 dark:bg-amber-500/10 text-[#F59E0B] dark:text-amber-400 font-mono text-[10px] px-3 py-1 rounded font-bold uppercase border border-amber-200/50 dark:border-amber-500/20">
+                            In Progress
                           </span>
                         </div>
                       </div>
@@ -465,42 +403,177 @@ export default function LandingPage({
                   )}
 
                   {heroTab === 'scheduling' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="flex justify-between items-center border-b border-[#E2E8F0] dark:border-[#334155] pb-2 text-xs">
-                        <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC]">SHARED AMENITIES OVERVIEW</span>
-                        <span className="text-[9px] font-mono bg-[#CCFBF1] dark:bg-[#14B8A6]/20 text-[#0F766E] dark:text-[#2DD4BF] px-2 rounded font-bold py-0.5">ACTIVE SESSION</span>
+                    <div className="space-y-4 animate-fadeIn">
+                      <div className="flex justify-between items-center border-b border-[#E2E8F0] dark:border-[#334155] pb-3 text-sm">
+                        <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wider">Amenity Availability Overview</span>
+                        <span className="text-[10px] font-mono bg-[#CCFBF1] dark:bg-[#14B8A6]/20 text-[#0F766E] dark:text-[#2DD4BF] px-2.5 rounded font-bold py-1">Active Booking</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-3.5 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl text-center">
+                          <span className="text-2xl block">📅</span>
+                          <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-1.5 truncate">Amenity</span>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block mt-0.5 font-medium">Available</span>
+                        </div>
+                        <div className="p-3.5 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl text-center">
+                          <span className="text-2xl block">📅</span>
+                          <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-1.5 truncate">Amenity</span>
+                          <span className="text-[10px] text-[#0F766E] dark:text-[#14B8A6] block mt-0.5 font-medium">Booked</span>
+                        </div>
+                        <div className="p-3.5 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl text-center">
+                          <span className="text-2xl block">📅</span>
+                          <span className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-1.5 truncate">Amenity</span>
+                          <span className="text-[10px] text-amber-600 dark:text-amber-500 block mt-0.5 font-medium">Check-In Scheduled</span>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="p-2.5 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl text-center">
-                          <span className="text-xl block">🏊</span>
-                          <span className="text-[10px] font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-1.5 truncate">Skyline Pool</span>
-                          <span className="text-[9px] text-emerald-600 dark:text-emerald-400 block mt-0.5">8 Slots booked</span>
-                        </div>
-                        <div className="p-2.5 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl text-center">
-                          <span className="text-xl block">🍹</span>
-                          <span className="text-[10px] font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-1.5 truncate">Penthouse</span>
-                          <span className="text-[9px] text-[#0F766E] dark:text-[#14B8A6] block mt-0.5">3 Reserv. today</span>
-                        </div>
-                        <div className="p-2.5 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl text-center">
-                          <span className="text-xl block">🎾</span>
-                          <span className="text-[10px] font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-1.5 truncate">Tennis Court</span>
-                          <span className="text-[9px] text-slate-500 dark:text-[#CBD5E1] block">4 Open slots</span>
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 bg-slate-50 dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-lg text-[10px] text-[#64748B] dark:text-[#CBD5E1] leading-normal font-light">
-                        ✔ Full reservation slots automatically align visual sync calendars inside client UI.
+                      <div className="p-3.5 bg-slate-50 dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-lg text-xs text-[#64748B] dark:text-[#CBD5E1] leading-normal font-light">
+                        ✔ Centralized scheduling automatically prevents double-booking conflicts.
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Simulated Console Stats Row */}
-                <div className="bg-[#FAFBFB] dark:bg-[#111827] p-3 text-center border-t border-[#E2E8F0] dark:border-[#334155] flex justify-center space-x-6 text-[10px] text-[#64748B] dark:text-[#CBD5E1] font-mono leading-none select-none">
-                  <span>Ping: 1.4ms</span>
-                  <span>Database: Cloud SQL Resilient</span>
-                  <span>Authed: SSL Active</span>
+                <div className="bg-[#FAFBFB] dark:bg-[#111827] p-4 text-center border-t border-[#E2E8F0] dark:border-[#334155] flex justify-center space-x-6 text-[10px] text-[#64748B] dark:text-[#CBD5E1] font-mono leading-none select-none">
+                  <span>System Response Goal ≤ 2 Seconds</span>
+                  <span>Secure Authentication</span>
+                  <span>Real-Time Status Updates</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Mockup (Absolute positioned, floating box completely visible inside the screen) */}
+            <div className="hidden lg:block absolute top-8 bottom-8 right-[calc((100%-100vw)/2+2rem)] left-[calc(5/12*100%+3rem)] xl:left-[calc(5/12*100%+4.5rem)] transition-all">
+              <div className="w-full h-full bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-3xl shadow-2xl overflow-hidden flex flex-col justify-between">
+                
+                {/* Simulated MacOS Browser Bar */}
+                <div className="bg-[#F1F5F9] dark:bg-[#111827] px-6 py-5 border-b border-[#E2E8F0] dark:border-[#334155] flex justify-between items-center select-none flex-none">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-3.5 h-3.5 bg-red-400 rounded-full inline-block"></span>
+                    <span className="w-3.5 h-3.5 bg-yellow-400 rounded-full inline-block"></span>
+                    <span className="w-3.5 h-3.5 bg-green-400 rounded-full inline-block"></span>
+                  </div>
+                  <div className="px-5 py-1.5 bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-lg text-xs font-mono text-[#64748B] dark:text-[#CBD5E1] w-80 truncate text-center">
+                    https://app.propertyflow.io
+                  </div>
+                  <div className="w-3.5"></div>
+                </div>
+
+                {/* Sub-navigation tabs within hero mockup */}
+                <div className="flex border-b border-[#E2E8F0] dark:border-[#334155] bg-slate-50/50 dark:bg-[#111827]/40 justify-start flex-none">
+                  <button 
+                    onClick={() => setHeroTab('maintenance')}
+                    className={`px-8 py-5 text-sm font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-2 transition-colors cursor-pointer ${heroTab === 'maintenance' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-[3px] border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
+                  >
+                    <Activity className="w-5 h-5" />
+                    <span>Maintenance Requests</span>
+                  </button>
+                  <button 
+                    onClick={() => setHeroTab('scheduling')}
+                    className={`px-8 py-5 text-sm font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-2 transition-colors cursor-pointer ${heroTab === 'scheduling' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-[3px] border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
+                  >
+                    <Zap className="w-5 h-5" />
+                    <span>Amenity Bookings</span>
+                  </button>
+                  <button 
+                    onClick={() => setHeroTab('analytics')}
+                    className={`px-8 py-5 text-sm font-bold border-r border-[#E2E8F0] dark:border-[#334155] flex items-center space-x-2 transition-colors cursor-pointer ${heroTab === 'analytics' ? 'bg-white dark:bg-[#1E293B] text-[#0F766E] dark:text-[#14B8A6] border-b-[3px] border-b-[#0F766E] dark:border-b-[#14B8A6]' : 'text-[#64748B] dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#111827]/40'}`}
+                  >
+                    <BarChart3 className="w-5 h-5" />
+                    <span>Real-Time Dashboard</span>
+                  </button>
+                </div>
+
+                {/* Simulated Content Area in Hero Preview */}
+                <div className="p-8 sm:p-10 space-y-8 flex-1 flex flex-col justify-center overflow-y-auto">
+                  {heroTab === 'analytics' && (
+                    <div className="space-y-6 animate-fadeIn">
+                      <div className="bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] p-5 rounded-2xl shadow-xs">
+                        <div className="text-xs font-bold font-mono text-[#64748B] dark:text-[#94A3B8] uppercase">Maintenance Resolution Target</div>
+                        <div className="text-xl sm:text-2xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-0.5 block">≤ 48 Hours</div>
+                        <div className="text-xs text-[#64748B] dark:text-[#94A3B8] font-light mt-1 block">Target Resolution Time</div>
+                      </div>
+                      <div className="bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] p-5 rounded-2xl shadow-xs">
+                        <div className="text-xs font-bold font-mono text-[#64748B] dark:text-[#94A3B8] uppercase">Request Completion Goal</div>
+                        <div className="text-xl sm:text-2xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-0.5 block">≥ 90%</div>
+                        <div className="text-xs text-[#64748B] dark:text-[#94A3B8] font-light mt-1 block">Completion Rate Target</div>
+                      </div>
+                      <div className="bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] p-5 rounded-2xl shadow-xs">
+                        <div className="text-xs font-bold font-mono text-[#64748B] dark:text-[#94A3B8] uppercase">Amenity Booking Conflict Goal</div>
+                        <div className="text-[#0F172A] dark:text-[#F8FAFC] font-extrabold text-xl sm:text-2xl mt-0.5 block">0</div>
+                        <div className="text-xs text-[#64748B] dark:text-[#94A3B8] font-light mt-1 block">Conflict-Free Booking Target</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {heroTab === 'maintenance' && (
+                    <div className="space-y-6 animate-fadeIn">
+                      <div className="flex justify-between items-center text-sm border-b border-[#E2E8F0] dark:border-[#334155] pb-4">
+                        <span className="font-bold text-base text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wider">Active Maintenance Requests</span>
+                        <span className="text-xs font-mono text-[#0F766E] dark:text-[#14B8A6]">Real-Time Monitor</span>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="p-5 bg-red-50/75 dark:bg-rose-950/25 border border-red-100 dark:border-rose-500/20 rounded-2xl flex justify-between items-center shadow-xs">
+                          <div className="text-sm">
+                            <span className="font-bold text-red-955 dark:text-rose-200 text-base sm:text-lg block">Maintenance Request</span>
+                            <span className="text-xs sm:text-sm text-red-750 dark:text-rose-350 font-light block mt-1">Issue Description</span>
+                          </div>
+                          <span className="bg-red-500 text-white font-mono text-[10px] sm:text-xs px-4 py-2 rounded-lg font-extrabold uppercase tracking-wider shadow-sm">
+                            Pending
+                          </span>
+                        </div>
+
+                        <div className="p-5 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-2xl flex justify-between items-center shadow-xs">
+                          <div className="text-sm">
+                            <span className="font-bold text-[#0F172A] dark:text-[#F8FAFC] text-base sm:text-lg block">Maintenance Request</span>
+                            <span className="text-xs sm:text-sm text-[#64748B] dark:text-[#CBD5E1] font-light block mt-1">Issue Description</span>
+                          </div>
+                          <span className="bg-amber-150 dark:bg-amber-500/10 text-[#F59E0B] dark:text-amber-400 font-mono text-[10px] sm:text-xs px-4 py-2 rounded-lg font-bold uppercase border border-amber-200/50 dark:border-amber-500/20 tracking-wider">
+                            In Progress
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {heroTab === 'scheduling' && (
+                    <div className="space-y-6 animate-fadeIn">
+                      <div className="flex justify-between items-center border-b border-[#E2E8F0] dark:border-[#334155] pb-4 text-sm">
+                        <span className="font-bold text-base text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wider">Amenity Availability Overview</span>
+                        <span className="text-xs font-mono bg-[#CCFBF1] dark:bg-[#14B8A6]/20 text-[#0F766E] dark:text-[#2DD4BF] px-3.5 rounded font-bold py-1.5">Active Booking</span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="p-4 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-2xl text-center shadow-xs">
+                          <span className="text-3xl block">📅</span>
+                          <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-2.5 truncate">Amenity</span>
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 block mt-1">Available</span>
+                        </div>
+                        <div className="p-4 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-2xl text-center shadow-xs">
+                          <span className="text-3xl block">📅</span>
+                          <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-2.5 truncate">Amenity</span>
+                          <span className="text-xs text-[#0F766E] dark:text-[#14B8A6] block mt-1">Booked</span>
+                        </div>
+                        <div className="p-4 bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-2xl text-center shadow-xs">
+                          <span className="text-3xl block">📅</span>
+                          <span className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] block mt-2.5 truncate">Amenity</span>
+                          <span className="text-xs text-amber-600 dark:text-amber-500 block mt-1 font-medium">Check-In Scheduled</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-slate-50 dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#334155] rounded-xl text-xs text-[#64748B] dark:text-[#CBD5E1] leading-relaxed font-light">
+                        ✔ Centralized scheduling automatically prevents double-booking conflicts.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Simulated Console Stats Row */}
+                <div className="bg-[#FAFBFB] dark:bg-[#111827] p-5 text-center border-t border-[#E2E8F0] dark:border-[#334155] flex justify-center space-x-10 text-xs text-[#64748B] dark:text-[#CBD5E1] font-mono leading-none select-none flex-none">
+                  <span>System Response Goal ≤ 2 Seconds</span>
+                  <span>Secure Authentication</span>
+                  <span>Real-Time Status Updates</span>
                 </div>
               </div>
             </div>
@@ -508,270 +581,529 @@ export default function LandingPage({
           </div>
         </div>
       </section>
+      )}
 
-      {/* KPI Performance Section */}
-      <section id="stats" className="py-16 bg-white dark:bg-[#0F172A] border-b border-[#E2E8F0] dark:border-[#334155] scroll-mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6]">
-              Portfolio Metrics Under Supervision
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 font-sans tracking-tight">
-              Executive Dashboard Financial Core Metrics
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, i) => {
-              const Icon = stat.icon;
-              return (
-                <div key={i} className="p-5 bg-white dark:bg-[#1E293B] rounded-xl border border-[#E2E8F0] dark:border-[#334155] hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between h-36">
-                  <div>
-                    <div className="flex justify-between items-center text-[#64748B] dark:text-[#94A3B8]">
-                      <span className="text-[9px] font-extrabold tracking-widest font-mono block">{stat.label}</span>
-                      <Icon className="w-4.5 h-4.5 text-[#0F766E] dark:text-[#14B8A6]" />
-                    </div>
-                    <div className="mt-2.5 text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight">{stat.value}</div>
-                  </div>
-                  <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center space-x-1 mt-2">
-                    <span>●</span> <span>{stat.change}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      </section>
-
-      {/* Features Grid Section */}
-      <section id="features" className="py-20 bg-[#F8FAFC] dark:bg-[#111827] scroll-mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6] bg-teal-50 dark:bg-[#14B8A6]/10 border border-teal-100 dark:border-[#14B8A6]/20 px-3.5 py-1.5 rounded-full inline-block">
-              Modern Operational Capabilities
-            </span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
-              Designed as a Complete Portfolio Command Center
-            </h2>
-            <p className="mt-3.5 text-sm sm:text-base text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
-              Every feature module exists to eliminate structural leaks, missed text notifications, unlogged email trails, and double-booking overlaps. Unify managers, technicians, and tenants seamlessly.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feat, i) => {
-              const Icon = feat.icon;
-              return (
-                <div key={i} className="bg-white dark:bg-[#1E293B] p-7 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 hover:shadow-lg transition-all flex flex-col justify-between h-[340px]">
-                  <div>
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="w-12 h-12 bg-teal-50 dark:bg-[#14B8A6]/10 text-[#0F766E] dark:text-[#5EEAD4] rounded-xl flex items-center justify-center border border-teal-100 dark:border-[#14B8A6]/20">
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-widest bg-slate-100 dark:bg-[#111827] text-[#64748B] dark:text-[#94A3B8] px-2.5 py-1 rounded">
-                        {feat.status}
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC]">{feat.title}</h3>
-                    <p className="mt-2.5 text-xs sm:text-sm text-[#64748B] dark:text-[#CBD5E1] leading-relaxed font-light">{feat.description}</p>
-                  </div>
-                  
-                  <div 
-                    className="mt-6 pt-4 border-t border-slate-100 dark:border-[#334155]/60 flex items-center space-x-1.5 font-bold text-xs text-[#0F766E] dark:text-[#14B8A6] cursor-pointer hover:underline" 
-                    onClick={onGetStarted}
-                  >
-                    <span>Explore modular workflow</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      </section>
-
-      {/* Testimonials Block Section */}
-      <section id="testimonials" className="py-20 bg-[#F1F5F9] dark:bg-[#0F172A] border-y border-[#E2E8F0] dark:border-[#334155] scroll-mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6]">
-              Client Referrals
-            </span>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight">
-              Endorsed by Top Corporate Portfolio Managers
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {reviews.map((r, i) => (
-              <div key={i} className="bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-5">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-3">
-                    <img 
-                      src={r.image} 
-                      alt={r.name} 
-                      className="w-12 h-12 rounded-xl object-cover ring-2 ring-teal-50 dark:ring-[#1E293B]"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div>
-                      <h4 className="font-extrabold text-xs sm:text-sm text-[#0F172A] dark:text-[#F8FAFC]">{r.name}</h4>
-                      <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] font-medium block">{r.role} • <span className="text-[#0F766E] dark:text-[#14B8A6]">{r.company}</span></p>
-                    </div>
-                  </div>
-
-                  <div className="flex">
-                    {[...Array(r.rating)].map((_, idx) => (
-                      <Star key={idx} className="w-4 h-4 text-[#F59E0B] fill-[#F59E0B]" />
-                    ))}
-                  </div>
-                </div>
-
-                <p className="text-xs sm:text-sm text-[#0F172A] dark:text-[#CBD5E1] italic leading-relaxed font-light">
-                  "{r.text}"
+      {/* Platform Features Page (Features Grid + Performance KPIs + Reviews Testimonials) */}
+      {activeSection === 'features' && (
+        <>
+          {/* Problem Statement Section */}
+          <section id="problem-statement" className="relative py-20 bg-white dark:bg-[#0F172A] border-b border-[#E2E8F0] dark:border-[#334155] scroll-mt-12 overflow-hidden animate-fadeIn">
+            {/* Subtle grid elements */}
+            <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none"></div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              
+              <div className="text-center max-w-3xl mx-auto mb-16">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6] bg-teal-50 dark:bg-[#14B8A6]/10 border border-teal-100 dark:border-[#14B8A6]/20 px-3.5 py-1.5 rounded-full inline-block">
+                  PROBLEM STATEMENT
+                </span>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+                  Challenges in Traditional Property Management
+                </h2>
+                <p className="mt-3.5 text-sm sm:text-base text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                  Traditional rental management processes often rely on manual communication, resulting in delayed maintenance updates, poor request visibility, communication gaps between tenants and property owners, and scheduling conflicts for shared amenities.
                 </p>
               </div>
-            ))}
-          </div>
 
-        </div>
-      </section>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {/* Card 1 */}
+                <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-7 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs flex flex-col justify-between h-48 hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors">
+                  <div>
+                    <span className="text-[10px] font-extrabold tracking-widest font-mono text-[#0F766E] dark:text-[#14B8A6] block uppercase">Gaps</span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Real-Time Tracking Gaps</h3>
+                  </div>
+                  <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                    Limited visibility into maintenance request progress.
+                  </p>
+                </div>
 
-      {/* Pricing Options Section */}
-      <section id="pricing" className="py-20 bg-white dark:bg-[#111827] scroll-mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Card 2 */}
+                <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-7 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs flex flex-col justify-between h-48 hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors">
+                  <div>
+                    <span className="text-[10px] font-extrabold tracking-widest font-mono text-[#0F766E] dark:text-[#14B8A6] block uppercase">Issues</span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Status Visibility Issues</h3>
+                  </div>
+                  <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                    Difficulty monitoring request and booking status.
+                  </p>
+                </div>
+
+                {/* Card 3 */}
+                <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-7 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs flex flex-col justify-between h-48 hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors">
+                  <div>
+                    <span className="text-[10px] font-extrabold tracking-widest font-mono text-[#0F766E] dark:text-[#14B8A6] block uppercase">Challenges</span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Communication Challenges</h3>
+                  </div>
+                  <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                    Manual coordination between tenants and property owners.
+                  </p>
+                </div>
+
+                {/* Card 4 */}
+                <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-7 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs flex flex-col justify-between h-48 hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors">
+                  <div>
+                    <span className="text-[10px] font-extrabold tracking-widest font-mono text-[#0F766E] dark:text-[#14B8A6] block uppercase">Conflicts</span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Booking Conflicts</h3>
+                  </div>
+                  <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                    Scheduling overlaps caused by unmanaged amenity reservations.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* Features Grid Section */}
+          <section id="features" className="relative py-20 bg-[#F8FAFC] dark:bg-[#111827] scroll-mt-12 overflow-hidden">
+            {/* Subtle grid elements */}
+            <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none"></div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              
+              <div className="text-center max-w-3xl mx-auto mb-16">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6] bg-teal-50 dark:bg-[#14B8A6]/10 border border-teal-100 dark:border-[#14B8A6]/20 px-3.5 py-1.5 rounded-full inline-block">
+                  Modern Operational Capabilities
+                </span>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+                  Real-Time Rental, Maintenance & Amenity Management
+                </h2>
+                <p className="mt-3.5 text-sm sm:text-base text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                  PropertyFlow centralizes maintenance requests, amenity bookings, and real-time status monitoring in one platform. The system improves transparency between tenants and property owners while helping reduce booking conflicts and manual coordination.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-8">
+                {features.map((feat, i) => {
+                  const Icon = feat.icon;
+                  return (
+                    <div key={i} className="bg-white dark:bg-[#1E293B] p-7 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 hover:shadow-lg transition-all flex flex-col justify-between h-[340px]">
+                      <div>
+                        <div className="flex justify-between items-center mb-6">
+                          <div className="w-12 h-12 bg-teal-50 dark:bg-[#14B8A6]/10 text-[#0F766E] dark:text-[#5EEAD4] rounded-xl flex items-center justify-center border border-teal-100 dark:border-[#14B8A6]/20">
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <span className="text-[9px] font-mono font-bold uppercase tracking-widest bg-slate-100 dark:bg-[#111827] text-[#64748B] dark:text-[#94A3B8] px-2.5 py-1 rounded">
+                            {feat.status}
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC]">{feat.title}</h3>
+                        <p className="mt-2.5 text-xs sm:text-sm text-[#64748B] dark:text-[#CBD5E1] leading-relaxed font-light">{feat.description}</p>
+                      </div>
+                      
+                      <div 
+                        className="mt-6 pt-4 border-t border-slate-100 dark:border-[#334155]/60 flex items-center space-x-1.5 font-bold text-xs text-[#0F766E] dark:text-[#14B8A6] cursor-pointer hover:underline" 
+                        onClick={onGetStarted}
+                      >
+                        <span>Learn More</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          </section>
+
+          {/* KPI Performance Section */}
+          <section id="stats" className="relative py-16 bg-white dark:bg-[#0F172A] border-b border-[#E2E8F0] dark:border-[#334155] scroll-mt-12 overflow-hidden">
+            {/* Subtle grid elements */}
+            <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none"></div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              
+              <div className="text-center max-w-2xl mx-auto mb-12">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6]">
+                  Project Target Objectives
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 font-sans tracking-tight">
+                  PRD Mandated System KPI Thresholds
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+                {stats.map((stat, i) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div key={i} className="p-5 bg-white dark:bg-[#1E293B] rounded-xl border border-[#E2E8F0] dark:border-[#334155] hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between h-36">
+                      <div>
+                        <div className="flex justify-between items-center text-[#64748B] dark:text-[#94A3B8]">
+                          <span className="text-[9px] font-extrabold tracking-widest font-mono block">{stat.label}</span>
+                          <Icon className="w-4.5 h-4.5 text-[#0F766E] dark:text-[#14B8A6]" />
+                        </div>
+                        <div className="mt-2.5 text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight">{stat.value}</div>
+                      </div>
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center space-x-1 mt-2">
+                        <span>●</span> <span>{stat.change}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          </section>
+
+          {/* User Satisfaction & Objectives KPI Section */}
+          <section id="testimonials" className="relative py-20 bg-[#F1F5F9] dark:bg-[#0F172A] border-y border-[#E2E8F0] dark:border-[#334155] scroll-mt-12 overflow-hidden">
+            {/* Subtle grid elements */}
+            <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none"></div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              
+              <div className="text-center max-w-3xl mx-auto mb-14">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6]">
+                  Platform Goals
+                </span>
+                <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight font-sans">
+                  Primary Objectives & Expected Impact
+                </h2>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-8">
+                {/* Card 1 */}
+                <div className="bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-4 flex flex-col justify-between h-44">
+                  <div>
+                    <span className="text-[10px] font-extrabold tracking-widest font-mono text-[#0F766E] dark:text-[#14B8A6] block uppercase">PRIMARY OBJECTIVE</span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Centralize Information</h3>
+                  </div>
+                  <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                    Centralize rental, maintenance, and amenity-related information.
+                  </p>
+                </div>
+
+                {/* Card 2 */}
+                <div className="bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-4 flex flex-col justify-between h-44">
+                  <div>
+                    <span className="text-[10px] font-extrabold tracking-widest font-mono text-[#0F766E] dark:text-[#14B8A6] block uppercase">IMPROVE TRANSPARENCY</span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Improve Transparency</h3>
+                  </div>
+                  <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                    Improve transparency between tenants and property owners.
+                  </p>
+                </div>
+
+                {/* Card 3 */}
+                <div className="bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-sm space-y-4 flex flex-col justify-between h-44">
+                  <div>
+                    <span className="text-[10px] font-extrabold tracking-widest font-mono text-[#0F766E] dark:text-[#14B8A6] block uppercase">EXPECTED IMPACT</span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Reduce Manual Coordination</h3>
+                  </div>
+                  <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                    Reduce manual coordination and improve operational efficiency.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Platform Modules Section */}
+      {activeSection === 'pricing' && (
+        <>
+          <section id="pricing" className="relative py-20 bg-white dark:bg-[#111827] scroll-mt-12 overflow-hidden animate-fadeIn">
+          {/* Subtle grid elements */}
+          <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none"></div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
           <div className="text-center max-w-3xl mx-auto mb-12">
             <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6] bg-teal-50 dark:bg-[#14B8A6]/10 px-3.5 py-1.5 rounded-full inline-block border border-teal-100 dark:border-[#14B8A6]/20">
-              SaaS Pricing Framework
+              PLATFORM MODULES
             </span>
             <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
-              Flexible Tiers Built for Growth Portfolios
+              Core Functional Modules
             </h2>
             <p className="mt-2 text-sm text-[#64748B] dark:text-[#CBD5E1] font-light">
-              Choose the layout tier that suits your local agency size or enterprise assets.
+              PropertyFlow provides centralized maintenance management, amenity booking management, and real-time operational visibility for tenants and property owners.
             </p>
-
-            {/* Toggle switch with Save 20% */}
-            <div className="mt-6 inline-flex p-1 bg-slate-100 dark:bg-[#1E293B] rounded-xl items-center border border-[#E2E8F0] dark:border-[#334155]">
-              <button 
-                onClick={() => setBillingCycle('monthly')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${billingCycle === 'monthly' ? 'bg-white dark:bg-[#111827] text-[#0F172A] dark:text-[#F8FAFC] shadow-sm' : 'text-[#64748B] dark:text-[#94A3B8]'}`}
-              >
-                Monthly Billing
-              </button>
-              <button 
-                onClick={() => setBillingCycle('annually')}
-                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${billingCycle === 'annually' ? 'bg-[#0F766E] dark:bg-[#14B8A6] text-white shadow-sm' : 'text-[#64748B] dark:text-[#94A3B8]'}`}
-              >
-                <span>Annually</span>
-                <span className="bg-[#10B981] text-[9px] text-white font-bold px-1.5 py-0.5 rounded font-mono uppercase">Save 20%</span>
-              </button>
-            </div>
           </div>
 
-          {/* Pricing Grid */}
-          <div className="grid md:grid-cols-3 gap-8 items-stretch pt-4">
-            {pricingPlans.map((plan, idx) => (
-              <div 
-                key={idx} 
-                className={`bg-white dark:bg-[#1E293B] rounded-2xl border transition-all flex flex-col justify-between ${plan.popular ? 'border-2 border-[#0F766E] dark:border-[#14B8A6] shadow-xl relative scale-[1.03] z-10' : 'border-[#E2E8F0] dark:border-[#334155] hover:shadow-md'}`}
-              >
-                {plan.popular && (
-                  <span className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-[#0F766E] dark:bg-[#14B8A6] text-white font-extrabold text-[9px] uppercase tracking-widest px-4 py-1 rounded-full border border-white dark:border-[#1E293B] font-sans">
-                    Highly Recommended Tier
-                  </span>
-                )}
-                
-                <div className="p-7">
-                  <span className="text-[10px] font-extrabold text-[#64748B] dark:text-[#94A3B8] tracking-widest uppercase block">{plan.name}</span>
-                  <div className="mt-4 flex items-baseline">
-                    <span className="text-4xl font-extrabold text-[#0F172A] dark:text-[#F8FAFC] tracking-tight">${plan.price}</span>
-                    <span className="text-[#64748B] dark:text-[#CBD5E1] text-xs ml-1 font-medium select-none">/ month</span>
-                  </div>
-                  <p className="mt-2 text-xs text-[#64748B] dark:text-[#CBD5E1] leading-relaxed font-light leading-normal">{plan.description}</p>
-                  
-                  <hr className="border-[#E2E8F0] dark:border-[#334155] my-5" />
-
-                  <ul className="space-y-3 text-xs text-[#64748B] dark:text-[#CBD5E1]">
-                    {plan.features.map((feature, fIdx) => (
-                      <li key={fIdx} className="flex items-start space-x-2.5">
-                        <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
-                        <span className="font-sans font-medium text-slate-700 dark:text-[#CBD5E1] leading-snug">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="p-7 pt-0">
-                  <button 
-                    id={`pricing-cta-${idx}`}
-                    onClick={onGetStarted} 
-                    className={`w-full py-3 px-4 rounded-[12px] font-bold text-xs uppercase tracking-wider transition-all text-center cursor-pointer ${plan.popular ? 'bg-[#0F766E] hover:bg-[#115E59] dark:bg-[#14B8A6] dark:hover:bg-[#0F766E] text-white shadow-md shadow-[#0F766E]/25' : 'bg-slate-900 dark:bg-[#111827] dark:hover:bg-[#1E293B] text-white dark:text-[#CBD5E1] dark:border dark:border-[#334155]'}`}
-                  >
-                    {plan.cta}
-                  </button>
-                </div>
+          {/* Modules Grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch pt-4">
+            {/* Card 1: Maintenance Management */}
+            <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:shadow-md transition-all flex flex-col justify-between p-7">
+              <div>
+                <span className="text-[10px] font-extrabold text-[#64748B] dark:text-[#94A3B8] tracking-widest uppercase block">Module 01</span>
+                <h3 className="mt-2 text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC]">Maintenance Management</h3>
+                <hr className="border-[#E2E8F0] dark:border-[#334155] my-4" />
+                <ul className="space-y-3 text-xs text-[#64748B] dark:text-[#CBD5E1]">
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Maintenance request creation</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Status updates</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Real-time visibility</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Resolution tracking</span>
+                  </li>
+                </ul>
               </div>
-            ))}
+            </div>
+
+            {/* Card 2: Amenity Management */}
+            <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:shadow-md transition-all flex flex-col justify-between p-7">
+              <div>
+                <span className="text-[10px] font-extrabold text-[#64748B] dark:text-[#94A3B8] tracking-widest uppercase block">Module 02</span>
+                <h3 className="mt-2 text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC]">Amenity Management</h3>
+                <hr className="border-[#E2E8F0] dark:border-[#334155] my-4" />
+                <ul className="space-y-3 text-xs text-[#64748B] dark:text-[#CBD5E1]">
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Availability display</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Date & time booking</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Check-in tracking</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Check-out tracking</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Booking conflict prevention</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Card 3: Real-Time Dashboards */}
+            <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:shadow-md transition-all flex flex-col justify-between p-7">
+              <div>
+                <span className="text-[10px] font-extrabold text-[#64748B] dark:text-[#94A3B8] tracking-widest uppercase block">Module 03</span>
+                <h3 className="mt-2 text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC]">Real-Time Dashboards</h3>
+                <hr className="border-[#E2E8F0] dark:border-[#334155] my-4" />
+                <ul className="space-y-3 text-xs text-[#64748B] dark:text-[#CBD5E1]">
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Maintenance overview</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Amenity usage overview</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Real-time monitoring</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">KPI visibility</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Card 4: Platform Foundation */}
+            <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:shadow-md transition-all flex flex-col justify-between p-7">
+              <div>
+                <span className="text-[10px] font-extrabold text-[#64748B] dark:text-[#94A3B8] tracking-widest uppercase block">Module 04</span>
+                <h3 className="mt-2 text-lg font-extrabold text-[#0F172A] dark:text-[#F8FAFC]">Platform Foundation</h3>
+                <hr className="border-[#E2E8F0] dark:border-[#334155] my-4" />
+                <ul className="space-y-3 text-xs text-[#64748B] dark:text-[#CBD5E1]">
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Secure authentication</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Responsive user interface</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Accurate real-time updates</span>
+                  </li>
+                  <li className="flex items-start space-x-2.5">
+                    <Check className="w-4 h-4 text-[#10B981] mt-0.5 shrink-0" />
+                    <span className="font-sans font-medium text-slate-750 dark:text-[#CBD5E1]">Modular architecture</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
 
-          {/* New Corporate Feature Comparison Matrix */}
-          <div className="mt-16 border border-[#E2E8F0] dark:border-[#334155] rounded-2xl overflow-hidden bg-[#F8FAFC] dark:bg-[#111827]">
-            <div className="p-5 bg-white dark:bg-[#1E293B] border-b border-[#E2E8F0] dark:border-[#334155]">
-              <h3 className="text-base font-extrabold text-[#0F172A] dark:text-[#F8FAFC]">Technical Matrix Spec Comparison</h3>
-              <p className="text-xs text-[#64748B] dark:text-[#CBD5E1] font-light mt-0.5">Understand core operational limits before requesting corporate deployment contracts.</p>
-            </div>
+          </div>
+        </section>
+
+        {/* Section 2: Platform Workflow */}
+        <section id="workflow" className="relative py-20 bg-[#F8FAFC] dark:bg-[#111827] border-t border-[#E2E8F0] dark:border-[#334155] overflow-hidden animate-fadeIn">
+          {/* Subtle grid elements */}
+          <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none"></div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-[#CBD5E1] min-w-[640px]">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-[#111827] border-b border-[#E2E8F0] dark:border-[#334155]">
-                    <th className="p-4 font-bold text-[#0F172A] dark:text-[#F8FAFC]">Operational Feature</th>
-                    <th className="p-4 font-bold text-[#0F172A] dark:text-[#F8FAFC]">Starter Suite</th>
-                    <th className="p-4 font-bold text-[#0F172A] dark:text-[#F8FAFC]">Professional Hub</th>
-                    <th className="p-4 font-bold text-[#0F172A] dark:text-[#F8FAFC]">Enterprise Matrix</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E8F0] dark:divide-[#334155] bg-white dark:bg-[#1E293B]">
-                  {matrixFeatures.map((feat, fIdx) => (
-                    <tr key={fIdx} className="hover:bg-slate-50/50 dark:hover:bg-[#111827]/40">
-                      <td className="p-4 font-bold text-[#0F172A] dark:text-[#F8FAFC]">{feat.name}</td>
-                      <td className="p-4">
-                        {typeof feat.starter === 'boolean' ? (
-                          feat.starter ? <Check className="w-4 h-4 text-[#10B981]" /> : <span className="text-[#64748B] dark:text-[#94A3B8]">—</span>
-                        ) : (
-                          feat.starterText || feat.starter
-                        )}
-                      </td>
-                      <td className="p-4">
-                        {typeof feat.pro === 'boolean' ? (
-                          feat.pro ? <Check className="w-4 h-4 text-[#10B981]" /> : <span className="text-[#64748B] dark:text-[#94A3B8]">—</span>
-                        ) : (
-                          feat.pro
-                        )}
-                      </td>
-                      <td className="p-4">
-                        {typeof feat.enterprise === 'boolean' ? (
-                          feat.enterprise ? <Check className="w-4 h-4 text-[#10B981]" /> : <span className="text-[#64748B] dark:text-[#94A3B8]">—</span>
-                        ) : (
-                          feat.enterprise
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6] bg-teal-50 dark:bg-[#14B8A6]/10 px-3.5 py-1.5 rounded-full inline-block border border-teal-100 dark:border-[#14B8A6]/20">
+                PLATFORM WORKFLOW
+              </span>
+              <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+                How PropertyFlow Works
+              </h2>
+              <p className="mt-2 text-sm text-[#64748B] dark:text-[#CBD5E1] font-light">
+                A simple workflow designed to improve transparency, reduce manual coordination, and provide real-time operational visibility.
+              </p>
             </div>
-          </div>
 
-        </div>
-      </section>
+            {/* Horizontal / Vertical Flow Steps */}
+            <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-6 lg:gap-4 relative">
+              {/* Step 1 */}
+              <div className="flex-1 bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs relative text-center flex flex-col justify-center h-40 w-full max-w-sm lg:max-w-none">
+                <span className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-[#0F766E] dark:bg-[#14B8A6] text-white font-extrabold text-[9px] uppercase tracking-widest px-3 py-1 rounded-full border border-white dark:border-[#1E293B]">
+                  Step 1
+                </span>
+                <h4 className="font-extrabold text-[#0F172A] dark:text-[#F8FAFC] text-sm sm:text-base leading-snug">User Login</h4>
+                <p className="text-[10px] sm:text-xs text-[#64748B] dark:text-[#CBD5E1] font-light mt-2.5">Secure authentication portal access for tenants and property owners.</p>
+              </div>
+
+              {/* Arrow 1 */}
+              <div className="flex items-center justify-center text-[#0F766E] dark:text-[#14B8A6] lg:rotate-0 rotate-90 py-2 lg:py-0 shrink-0">
+                <ArrowRight className="w-6 h-6" />
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex-1 bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs relative text-center flex flex-col justify-center h-40 w-full max-w-sm lg:max-w-none">
+                <span className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-[#0F766E] dark:bg-[#14B8A6] text-white font-extrabold text-[9px] uppercase tracking-widest px-3 py-1 rounded-full border border-white dark:border-[#1E293B]">
+                  Step 2
+                </span>
+                <h4 className="font-extrabold text-[#0F172A] dark:text-[#F8FAFC] text-sm sm:text-base leading-snug">Create Request or Booking</h4>
+                <p className="text-[10px] sm:text-xs text-[#64748B] dark:text-[#CBD5E1] font-light mt-2.5">Submit a generic maintenance request or book a shared amenity time slot.</p>
+              </div>
+
+              {/* Arrow 2 */}
+              <div className="flex items-center justify-center text-[#0F766E] dark:text-[#14B8A6] lg:rotate-0 rotate-90 py-2 lg:py-0 shrink-0">
+                <ArrowRight className="w-6 h-6" />
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex-1 bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs relative text-center flex flex-col justify-center h-40 w-full max-w-sm lg:max-w-none">
+                <span className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-[#0F766E] dark:bg-[#14B8A6] text-white font-extrabold text-[9px] uppercase tracking-widest px-3 py-1 rounded-full border border-white dark:border-[#1E293B]">
+                  Step 3
+                </span>
+                <h4 className="font-extrabold text-[#0F172A] dark:text-[#F8FAFC] text-sm sm:text-base leading-snug">System Checks & Records</h4>
+                <p className="text-[10px] sm:text-xs text-[#64748B] dark:text-[#CBD5E1] font-light mt-2.5">Centralized scheduling checks availability and records transaction logs.</p>
+              </div>
+
+              {/* Arrow 3 */}
+              <div className="flex items-center justify-center text-[#0F766E] dark:text-[#14B8A6] lg:rotate-0 rotate-90 py-2 lg:py-0 shrink-0">
+                <ArrowRight className="w-6 h-6" />
+              </div>
+
+              {/* Step 4 */}
+              <div className="flex-1 bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs relative text-center flex flex-col justify-center h-40 w-full max-w-sm lg:max-w-none">
+                <span className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-[#0F766E] dark:bg-[#14B8A6] text-white font-extrabold text-[9px] uppercase tracking-widest px-3 py-1 rounded-full border border-white dark:border-[#1E293B]">
+                  Step 4
+                </span>
+                <h4 className="font-extrabold text-[#0F172A] dark:text-[#F8FAFC] text-sm sm:text-base leading-snug">Status Reflected</h4>
+                <p className="text-[10px] sm:text-xs text-[#64748B] dark:text-[#CBD5E1] font-light mt-2.5">Live status updates propagate in real time across dashboards and portals.</p>
+              </div>
+
+              {/* Arrow 4 */}
+              <div className="flex items-center justify-center text-[#0F766E] dark:text-[#14B8A6] lg:rotate-0 rotate-90 py-2 lg:py-0 shrink-0">
+                <ArrowRight className="w-6 h-6" />
+              </div>
+
+              {/* Step 5 */}
+              <div className="flex-1 bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] shadow-xs relative text-center flex flex-col justify-center h-40 w-full max-w-sm lg:max-w-none">
+                <span className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 bg-[#0F766E] dark:bg-[#14B8A6] text-white font-extrabold text-[9px] uppercase tracking-widest px-3 py-1 rounded-full border border-white dark:border-[#1E293B]">
+                  Step 5
+                </span>
+                <h4 className="font-extrabold text-[#0F172A] dark:text-[#F8FAFC] text-sm sm:text-base leading-snug">Task Completion</h4>
+                <p className="text-[10px] sm:text-xs text-[#64748B] dark:text-[#CBD5E1] font-light mt-2.5">Resolution is confirmed or booking check-out successfully recorded.</p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Section 3: Core Data Entities */}
+        <section id="entities" className="relative py-20 bg-white dark:bg-[#0F172A] border-t border-[#E2E8F0] dark:border-[#334155] overflow-hidden animate-fadeIn">
+          {/* Subtle grid elements */}
+          <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-60 pointer-events-none"></div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#0F766E] dark:text-[#14B8A6] bg-teal-50 dark:bg-[#14B8A6]/10 px-3.5 py-1.5 rounded-full inline-block border border-teal-100 dark:border-[#14B8A6]/20">
+                CORE DATA ENTITIES
+              </span>
+              <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#F8FAFC]">
+                Platform Data Structure
+              </h2>
+              <p className="mt-2 text-sm text-[#64748B] dark:text-[#CBD5E1] font-light">
+                PropertyFlow organizes rental operations around five core entities.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+              {/* Card 1: Users */}
+              <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors flex flex-col justify-between h-44">
+                <div>
+                  <span className="text-[9px] font-mono font-extrabold tracking-widest text-[#64748B] dark:text-[#94A3B8] uppercase">Entity 01</span>
+                  <h3 className="text-base font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Users</h3>
+                </div>
+                <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                  Tenant and property owner access management.
+                </p>
+              </div>
+
+              {/* Card 2: Properties */}
+              <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors flex flex-col justify-between h-44">
+                <div>
+                  <span className="text-[9px] font-mono font-extrabold tracking-widest text-[#64748B] dark:text-[#94A3B8] uppercase">Entity 02</span>
+                  <h3 className="text-base font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Properties</h3>
+                </div>
+                <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                  Managed rental properties and associated records.
+                </p>
+              </div>
+
+              {/* Card 3: Maintenance Requests */}
+              <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors flex flex-col justify-between h-44">
+                <div>
+                  <span className="text-[9px] font-mono font-extrabold tracking-widest text-[#64748B] dark:text-[#94A3B8] uppercase">Entity 03</span>
+                  <h3 className="text-base font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Maintenance Requests</h3>
+                </div>
+                <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                  Maintenance issues, status updates, and resolution tracking.
+                </p>
+              </div>
+
+              {/* Card 4: Amenities */}
+              <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors flex flex-col justify-between h-44">
+                <div>
+                  <span className="text-[9px] font-mono font-extrabold tracking-widest text-[#64748B] dark:text-[#94A3B8] uppercase">Entity 04</span>
+                  <h3 className="text-base font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Amenities</h3>
+                </div>
+                <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                  Shared facilities available for reservation.
+                </p>
+              </div>
+
+              {/* Card 5: Amenity Bookings */}
+              <div className="bg-[#F8FAFC] dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E2E8F0] dark:border-[#334155] hover:border-[#CCFBF1] dark:hover:border-[#14B8A6]/40 transition-colors flex flex-col justify-between h-44">
+                <div>
+                  <span className="text-[9px] font-mono font-extrabold tracking-widest text-[#64748B] dark:text-[#94A3B8] uppercase">Entity 05</span>
+                  <h3 className="text-base font-extrabold text-[#0F172A] dark:text-[#F8FAFC] mt-2 leading-snug">Amenity Bookings</h3>
+                </div>
+                <p className="text-[11px] text-[#64748B] dark:text-[#CBD5E1] font-light leading-relaxed">
+                  Scheduled reservations with check-in and check-out tracking.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+        </>
+      )}
 
       {/* Simple Footer */}
       <footer className="bg-slate-900 dark:bg-[#0F172A] text-slate-400 dark:text-[#CBD5E1] py-12 border-t border-[#E2E8F0] dark:border-[#334155]">
@@ -783,8 +1115,8 @@ export default function LandingPage({
               </div>
               <span className="text-white font-extrabold text-base tracking-tight font-sans">PropertyFlow</span>
             </div>
-            <p className="text-[10px] font-mono text-slate-505 dark:text-[#94A3B8] text-center sm:text-right">
-              © 2026 PropertyFlow Command Inc. SOC-2 Certified. SLA Protected. Fully sandboxed on Cloud SQL (PostgreSQL).
+            <p className="text-[10px] font-mono text-slate-550 dark:text-[#CBD5E1] text-center sm:text-right">
+              © 2026 PropertyFlow. Real-Time Property Rental, Maintenance & Amenity Management Platform.
             </p>
           </div>
         </div>

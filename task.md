@@ -1,0 +1,33 @@
+# Task List - Phase 2 PropertyFlow Dashboards & Auth Implementation
+
+- [x] Global Branding & Naming Realignment
+  - [x] Update title in `index.html` to PropertyFlow
+  - [x] Rename `@zillow.com` to `@propertyflow.com` across `App.tsx`, `LoginPage.tsx`, and `data.ts`
+  - [x] Change local storage theme key to `propertyflow-theme` in `App.tsx`
+  - [x] Rename "Portfolio KPIs" to "Platform KPIs" and "Live Core Monitor" to "Real-Time Monitoring" in `Sidebar.tsx` and routing
+  - [x] Filter navigation menu items in `Sidebar.tsx` and quick add menu in `Header.tsx` based on user roles
+  - [x] Replace hardcoded property complex strings (e.g. `'Summit Heights'`) with dynamic lookup by ID in all views
+- [x] Stateful User Management in `App.tsx`
+  - [x] Convert `users` to stateful React state in `App.tsx`
+- [x] Tenant Dashboard & Role Views
+  - [x] Implement Tenant Dashboard layout in `DashboardView.tsx` (shortcuts, requests tracker, bookings check-in/out, history)
+  - [x] Add an Amenity Availability Calendar/Timeline view within the Tenant experience
+  - [x] Restrict `MaintenanceView.tsx` to Tenant's own requests and default property creation field to their property
+  - [x] Restrict `AmenityView.tsx` bookings ledger to Tenant's own bookings
+- [x] Manager Dashboard & Role Views
+  - [x] Implement Manager Dashboard layout in `DashboardView.tsx` (KPI targets, dispatches overview, live ticker)
+  - [x] Implement Booking Conflict Monitoring overlap scanning and warnings alert panel
+- [x] Admin Dashboard & Role Views
+  - [x] Rebuild `AdminView.tsx` for User Management (add, edit details, change roles, delete users)
+  - [x] Rebuild `AdminView.tsx` for Property Management (add, edit, delete properties)
+  - [x] Rebuild `AdminView.tsx` for Amenity Management (add, edit, delete amenities)
+  - [x] Rebuild `AdminView.tsx` for Operational Monitoring logs (excluding infra metrics)
+- [x] Authentication Screens (`LoginPage.tsx`)
+  - [x] Implement sub-states for login, forgot password, and reset password flows
+- [x] User Profile & Settings (`UserProfileView.tsx`)
+  - [x] Update fields to support phone number and password editing
+  - [x] Replace SMS settings with Real-Time Update Preferences (dashboard update & audio alarm toggles)
+  - [x] Display clean feedback notifications on save
+- [x] Verification and Compilation
+  - [x] Run `npm run build` to confirm zero compiler errors
+  - [x] Verify Tenant, Manager, Admin, and Guest UX paths in browser
