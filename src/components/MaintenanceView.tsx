@@ -17,14 +17,18 @@ import {
 } from 'lucide-react';
 import { User as UserType, Property, MaintenanceRequest, MaintenancePriority, MaintenanceStatus } from '../types.ts';
 import { EmptyState, StatusBadge } from './DesignSystem.tsx';
+import { maintenanceValidationSchema } from '../../shared/zod';
+import { useCreateMaintenanceRequest, useUpdateMaintenanceRequest, useDeleteMaintenanceRequest, useRateMaintenanceRequest } from '../api/hooks';
+import { Edit2, Trash2, Star } from 'lucide-react';
 
 interface MaintenanceViewProps {
   currentUser: UserType;
   properties: Property[];
   maintenance: MaintenanceRequest[];
-  onCreateTicket: (ticket: any) => void;
-  onUpdateTicketStatus: (id: string, status: MaintenanceStatus, assignedTo?: string) => void;
+  onCreateTicket?: (ticket: any) => void;
+  onUpdateTicketStatus?: (id: string, status: MaintenanceStatus, assignedTo?: string) => void;
   staffUsers: UserType[];
+  isLoading?: boolean;
 }
 
 export default function MaintenanceView({
@@ -33,17 +37,17 @@ export default function MaintenanceView({
   maintenance,
   onCreateTicket,
   onUpdateTicketStatus,
-  staffUsers
+  staffUsers,
+  isLoading = false
 }: MaintenanceViewProps) {
   const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Search/Filter local states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPriorityFilter, setSelectedPriorityFilter] = useState<string>('All');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('All');
-  const [recentKeywords] = useState(['Boiler', 'HVAC', 'Drywall', 'Ballast']);
+  const [recentKeywords] = useState(['Plumbing', 'Electrical', 'Water Leakage', 'Cleaning', 'Lift', 'Air Conditioning']);
 
   // Form Fields
   const [title, setTitle] = useState('');
@@ -58,13 +62,24 @@ export default function MaintenanceView({
   const [formTouched, setFormTouched] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Simulated Load cycle to expose skeleton loaders
+  // Edit Mode States
+  const [editingRequest, setEditingRequest] = useState<MaintenanceRequest | null>(null);
+
+  // Rating States
+  const [rating, setRating] = useState<number>(0);
+  const [reviewComment, setReviewComment] = useState<string>('');
+
+  // React Query Mutations
+  const createTicketMutation = useCreateMaintenanceRequest();
+  const updateTicketMutation = useUpdateMaintenanceRequest();
+  const deleteTicketMutation = useDeleteMaintenanceRequest();
+  const rateTicketMutation = useRateMaintenanceRequest();
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 700);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!propertyId && properties.length > 0) {
+      setPropertyId(currentUser.role === 'Tenant' && currentUser.propertyId ? currentUser.propertyId : properties[0].id);
+    }
+  }, [properties, propertyId, currentUser]);
 
   // Filter Maintenance
   const filteredMaintenance = maintenance.filter(req => {
@@ -84,10 +99,19 @@ export default function MaintenanceView({
     return matchesSearch && matchesPriority && matchesStatus;
   });
 
-  // Synchronize first available request if selected remains out of scope
+  // Synchronize selectedRequest with updated data from React Query
   useEffect(() => {
-    if (!isLoading && filteredMaintenance.length > 0 && !selectedRequest) {
-      setSelectedRequest(filteredMaintenance[0]);
+    if (!isLoading && filteredMaintenance.length > 0) {
+      if (!selectedRequest) {
+        setSelectedRequest(filteredMaintenance[0]);
+      } else {
+        const updatedMatch = filteredMaintenance.find(req => req.id === selectedRequest.id);
+        if (updatedMatch) {
+          if (updatedMatch.status !== selectedRequest.status || updatedMatch.assignedTo !== selectedRequest.assignedTo || updatedMatch.priority !== selectedRequest.priority) {
+            setSelectedRequest(updatedMatch);
+          }
+        }
+      }
     } else if (filteredMaintenance.length === 0) {
       setSelectedRequest(null);
     }
@@ -96,34 +120,53 @@ export default function MaintenanceView({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormTouched(true);
+    setFormError(null);
 
-    // Strict validation
-    if (!title.trim()) {
-      setFormError('SLA validation failure: Please stipulate a descriptive title for field technicians.');
-      return;
-    }
-    if (title.length < 8) {
-      setFormError('SLA validation failure: Incident title must be at least 8 characters for diagnostic validation.');
-      return;
-    }
-    if (!unitNumber.trim()) {
-      setFormError('Operations validation failure: Please input the specific property unit number.');
-      return;
-    }
-    if (description.length < 15) {
-      setFormError('Verification check failed: Full scope description must exceed 15 characters to avoid technician routing delays.');
-      return;
+    const finalTitle = currentUser.role === 'Tenant' ? `${category} Issue - Unit ${unitNumber}`.padEnd(8, ' ') : title;
+
+    try {
+      maintenanceValidationSchema.parse({
+        title: finalTitle,
+        description,
+        unitNumber,
+        category,
+        priority: priority.toUpperCase(),
+        propertyId,
+        tenantId: currentUser.id
+      });
+    } catch (err: any) {
+      if (err.errors) {
+        setFormError(err.errors[0].message);
+        return;
+      }
     }
 
     // Success dispatch
-    onCreateTicket({
-      title,
-      description,
-      propertyId,
-      unitNumber,
-      priority,
-      category
-    });
+    if (editingRequest) {
+      updateTicketMutation.mutate({
+        id: editingRequest.id,
+        data: {
+          title: finalTitle,
+          description,
+          propertyId,
+          unitNumber,
+          priority: priority.toUpperCase() as any,
+          category,
+        }
+      });
+      setEditingRequest(null);
+    } else {
+      createTicketMutation.mutate({
+        title: finalTitle,
+        description,
+        propertyId,
+        unitNumber,
+        priority: priority.toUpperCase() as any,
+        category,
+        status: 'PENDING',
+        tenantId: currentUser.id
+      });
+    }
 
     // Reset Form
     setTitle('');
@@ -136,22 +179,44 @@ export default function MaintenanceView({
     setShowCreateModal(false);
   };
 
+  const openEditModal = (req: MaintenanceRequest) => {
+    setEditingRequest(req);
+    setTitle(req.title);
+    setDescription(req.description);
+    setPropertyId(req.propertyId);
+    setUnitNumber(req.unitNumber);
+    // Convert to proper casing for local state if necessary
+    setPriority(req.priority as MaintenancePriority);
+    setCategory(req.category);
+    setShowCreateModal(true);
+  };
+
+  const handleDeleteRequest = (id: string) => {
+    if (confirm('Are you sure you want to delete this maintenance request?')) {
+      deleteTicketMutation.mutate(id);
+      if (selectedRequest?.id === id) {
+        setSelectedRequest(null);
+      }
+    }
+  };
+
   const handleStatusUpdate = (status: MaintenanceStatus) => {
     if (!selectedRequest) return;
     const assignedUser = staffUsers[0]?.name || 'Unassigned Staff';
-    onUpdateTicketStatus(selectedRequest.id, status, assignedUser);
     
-    // Refresh selected request state inline
-    setSelectedRequest(prev => {
-      if (prev) {
-        return {
-          ...prev,
-          status,
-          assignedTo: assignedUser
-        };
-      }
-      return null;
+    // Status in UI is 'Pending', 'In Progress', 'Completed'
+    onUpdateTicketStatus(selectedRequest.id, status, assignedUser);
+  };
+
+  const handleRateRequest = () => {
+    if (!selectedRequest || rating === 0) return;
+    rateTicketMutation.mutate({
+      id: selectedRequest.id,
+      rating,
+      reviewComment: reviewComment.trim() || undefined
     });
+    setRating(0);
+    setReviewComment('');
   };
 
   const clearAllFilters = () => {
@@ -167,15 +232,17 @@ export default function MaintenanceView({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#334155] pb-5">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#F8FAFC] tracking-tight">Active Repaint & Repair Dispatches</h1>
-            <span className="hidden sm:inline bg-[#14B8A6]/10 text-[#14B8A6] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#14B8A6]/20 font-mono tracking-tight">SYSTEM ONLINE</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#F8FAFC] tracking-tight">Maintenance Requests</h1>
+            <span className="hidden sm:inline bg-[#14B8A6]/10 text-[#14B8A6] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#14B8A6]/20 font-mono tracking-tight">Real-Time Connected</span>
           </div>
-          <p className="text-sm text-[#CBD5E1] font-light mt-0.5">Disseminate orders, track response clocks, and verify technician reports under compliance SLAs.</p>
+          <p className="text-sm text-[#CBD5E1] font-light mt-0.5">
+            {currentUser.role === 'Tenant' ? 'Submit maintenance requests and track their status in real time.' : 'Manage maintenance requests, update request statuses, and monitor real-time maintenance progress.'}
+          </p>
         </div>
 
         <div className="flex items-center gap-3 self-start sm:self-auto shrink-0 leading-none">
           <div className="hidden lg:block text-right pr-2">
-            <span className="text-[10px] font-bold text-[#94A3B8] block uppercase font-mono">Last SLA Audit Check</span>
+            <span className="text-[10px] font-bold text-[#94A3B8] block uppercase font-mono">Real-Time Status</span>
             <span className="text-xs text-[#CBD5E1] font-medium">Synced 1 min ago</span>
           </div>
 
@@ -190,7 +257,7 @@ export default function MaintenanceView({
             aria-label="File a new maintenance dispatch order"
           >
             <Plus className="w-4 h-4 text-white font-extrabold" />
-            <span>New Repair Order</span>
+            <span>{currentUser.role === 'Tenant' ? 'New Maintenance Request' : 'Log Maintenance Request'}</span>
           </button>
         </div>
       </div>
@@ -270,6 +337,28 @@ export default function MaintenanceView({
         </div>
       </div>
 
+      {/* Summary Row */}
+      {currentUser.role !== 'Tenant' && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-brand-surface border border-brand-border rounded-2xl p-4 shadow-sm flex flex-col justify-center transition-all hover:border-primary-teal/50">
+            <span className="text-[10px] font-bold text-brand-muted uppercase font-sans tracking-wider">Total Requests</span>
+            <span className="text-xl sm:text-2xl font-extrabold text-brand-title mt-1 font-mono">{maintenance.length}</span>
+          </div>
+          <div className="bg-brand-surface border border-brand-border rounded-2xl p-4 shadow-sm flex flex-col justify-center transition-all hover:border-amber-500/50">
+            <span className="text-[10px] font-bold text-brand-muted uppercase font-sans tracking-wider">Pending</span>
+            <span className="text-xl sm:text-2xl font-extrabold text-amber-500 mt-1 font-mono">{maintenance.filter(r => r.status === 'Pending').length}</span>
+          </div>
+          <div className="bg-brand-surface border border-brand-border rounded-2xl p-4 shadow-sm flex flex-col justify-center transition-all hover:border-primary-teal/50">
+            <span className="text-[10px] font-bold text-brand-muted uppercase font-sans tracking-wider">In Progress</span>
+            <span className="text-xl sm:text-2xl font-extrabold text-primary-teal mt-1 font-mono">{maintenance.filter(r => r.status === 'In Progress').length}</span>
+          </div>
+          <div className="bg-brand-surface border border-brand-border rounded-2xl p-4 shadow-sm flex flex-col justify-center transition-all hover:border-emerald-500/50">
+            <span className="text-[10px] font-bold text-brand-muted uppercase font-sans tracking-wider">Completed</span>
+            <span className="text-xl sm:text-2xl font-extrabold text-emerald-500 mt-1 font-mono">{maintenance.filter(r => r.status === 'Completed').length}</span>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid: Left is Tickets List, Right is Detail View */}
       <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 items-start">
         
@@ -311,7 +400,7 @@ export default function MaintenanceView({
                   className={`p-5 rounded-2xl border transition-all cursor-pointer text-brand-body ${isSelected ? 'bg-brand-alternate dark:bg-[#334155] border-primary-teal ring-2 ring-primary-teal shadow-md' : 'bg-brand-surface border-brand-border hover:border-primary-teal/75 hover:shadow-xs focus:ring-2 focus:ring-primary-teal/50'}`}
                   role="button"
                   aria-selected={isSelected}
-                  aria-label={`Dispatch report: ${req.title}, Status: ${req.status}`}
+                  aria-label={`Maintenance report: ${req.title}, Status: ${req.status}`}
                 >
                   <div className="flex justify-between items-start gap-3">
                     <div className="space-y-1">
@@ -349,9 +438,9 @@ export default function MaintenanceView({
                 📋
               </div>
               <div>
-                <h5 className="font-extrabold text-[#F8FAFC] text-xs">No dispatches found</h5>
+                <h5 className="font-extrabold text-[#F8FAFC] text-xs">No maintenance requests found.</h5>
                 <p className="text-[11px] text-[#CBD5E1] max-w-xs mx-auto mt-1 leading-normal font-light">
-                  Either no work orders are logged for this category, or your filters matched 0 active tickets.
+                  {currentUser.role === 'Tenant' ? "You haven't submitted any maintenance requests yet." : "No maintenance requests are currently assigned or match the selected filters."}
                 </p>
                 <button
                   onClick={clearAllFilters}
@@ -391,9 +480,9 @@ export default function MaintenanceView({
               <div className="flex justify-between items-start gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2 text-xs text-brand-muted font-mono">
-                    <span>REPAIR TICKET #{selectedRequest.id}</span>
+                    <span>REQUEST ID #{selectedRequest.id}</span>
                     <span>•</span>
-                    <span className="font-sans font-semibold">Priority check: {selectedRequest.priority}</span>
+                    <span className="font-sans font-semibold">Priority: {selectedRequest.priority}</span>
                   </div>
                   <h2 className="text-lg sm:text-xl font-extrabold text-brand-title leading-snug mt-1">{selectedRequest.title}</h2>
                 </div>
@@ -405,118 +494,137 @@ export default function MaintenanceView({
                 }`}>
                   {selectedRequest.status.toUpperCase()}
                 </span>
+                {currentUser.role !== 'Tenant' && (
+                  <div className="flex space-x-2 shrink-0 self-start">
+                    <button 
+                      onClick={() => openEditModal(selectedRequest)}
+                      className="px-3 py-1.5 bg-brand-alternate hover:bg-brand-alternate/80 text-brand-title border border-brand-border rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteRequest(selectedRequest.id)}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Box: Assigned Personnel & Author */}
+              {/* Box: Details */}
               <div className="grid grid-cols-2 gap-4 border-y border-brand-border py-4.5">
-                <div>
-                  <span className="text-[10px] font-bold text-brand-muted uppercase block tracking-wider font-sans">Submitting Tenant</span>
-                  <div className="flex items-center space-x-2 mt-1.5 leading-none">
-                    <div className="w-7 h-7 bg-primary-teal/20 text-primary-teal dark:text-secondary-teal rounded-full flex items-center justify-center text-xs font-bold font-sans select-none">
-                      {selectedRequest.createdBy.charAt(0)}
+                {currentUser.role !== 'Tenant' && (
+                  <div>
+                    <span className="text-[10px] font-bold text-brand-muted uppercase block tracking-wider font-sans">Tenant</span>
+                    <div className="flex items-center space-x-2 mt-1.5 leading-none">
+                      <span className="text-xs font-extrabold text-brand-title truncate">{selectedRequest.createdBy}</span>
                     </div>
-                    <span className="text-xs font-extrabold text-brand-title truncate">{selectedRequest.createdBy}</span>
                   </div>
-                </div>
+                )}
+                {currentUser.role === 'Tenant' && (
+                  <div>
+                    <span className="text-[10px] font-bold text-brand-muted uppercase block tracking-wider font-sans">Issue Category</span>
+                    <div className="flex items-center space-x-2 mt-1.5 leading-none">
+                      <span className="text-xs font-semibold text-brand-title truncate">{selectedRequest.category}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div>
-                  <span className="text-[10px] font-bold text-brand-muted uppercase block tracking-wider font-sans">Tech Handled By</span>
+                  <span className="text-[10px] font-bold text-brand-muted uppercase block tracking-wider font-sans">Property</span>
                   <div className="flex items-center space-x-2 mt-1.5 leading-none">
-                    <div className="w-7 h-7 bg-brand-alternate text-brand-body rounded-full flex items-center justify-center text-xs font-bold font-mono">
-                      🛠️
-                    </div>
                     <span className="text-xs font-semibold text-brand-title truncate">
-                      {selectedRequest.assignedTo || 'Unassigned Crew Pool'}
+                      {properties.find(p => p.id === selectedRequest.propertyId)?.name || 'Unknown'}
                     </span>
                   </div>
                 </div>
+
+                <div>
+                  <span className="text-[10px] font-bold text-brand-muted uppercase block tracking-wider font-sans">Unit Number</span>
+                  <div className="flex items-center space-x-2 mt-1.5 leading-none">
+                    <span className="text-xs font-semibold text-brand-title truncate">
+                      {selectedRequest.unitNumber}
+                    </span>
+                  </div>
+                </div>
+                
+                <div>
+                  <span className="text-[10px] font-bold text-brand-muted uppercase block tracking-wider font-sans">Created Date</span>
+                  <div className="flex items-center space-x-2 mt-1.5 leading-none">
+                    <span className="text-xs font-semibold text-brand-title truncate">
+                      {new Date(selectedRequest.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                
+                {selectedRequest.status === 'Completed' && (
+                  <div>
+                    <span className="text-[10px] font-bold text-brand-muted uppercase block tracking-wider font-sans">Resolution Date</span>
+                    <div className="flex items-center space-x-2 mt-1.5 leading-none">
+                      <span className="text-xs font-semibold text-emerald-500 truncate">
+                        Resolved
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Description Body */}
               <div className="space-y-2">
-                <span className="text-[10px] font-extrabold text-brand-muted uppercase tracking-widest block font-sans">Incident Logs & Directive Description</span>
+                <span className="text-[10px] font-extrabold text-brand-muted uppercase tracking-widest block font-sans">Issue Description</span>
                 <div className="p-4 bg-brand-alternate/40 rounded-xl border border-brand-border text-xs sm:text-sm text-brand-body leading-relaxed font-light">
                   {selectedRequest.description}
                 </div>
               </div>
 
-              {/* Incident Attachments Simulation */}
-              <div className="space-y-2">
-                <span className="text-[10px] font-extrabold text-brand-muted uppercase tracking-widest block font-sans">SLA INCIDENT ATTACHMENTS</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="border border-brand-border hover:border-primary-teal rounded-xl p-3 flex items-center justify-between transition-all bg-brand-alternate/30 cursor-pointer">
-                    <div className="flex items-center space-x-2.5 truncate">
-                      <div className="w-8 h-8 bg-teal-500/10 text-primary-teal dark:text-secondary-teal rounded-lg flex items-center justify-center shrink-0 text-sm">
-                        📄
-                      </div>
-                      <div className="text-left font-sans truncate">
-                        <span className="text-xs font-bold text-brand-title block truncate">SLA_Audit_Diagnostic.pdf</span>
-                        <span className="text-[10px] text-brand-muted block">Tech spec sheet ready</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="border border-brand-border hover:border-primary-teal rounded-xl p-3 flex items-center justify-between transition-all bg-brand-alternate/30 cursor-pointer">
-                    <div className="flex items-center space-x-2.5 truncate">
-                      <div className="w-8 h-8 bg-amber-500/10 text-amber-500 rounded-lg flex items-center justify-center shrink-0 text-sm">
-                        🖼️
-                      </div>
-                      <div className="text-left font-sans truncate">
-                        <span className="text-xs font-bold text-brand-title block truncate">Site_Work_Reference.jpg</span>
-                        <span className="text-[10px] text-brand-muted block">Field camera state</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Historical Audit Trace */}
+              {/* Simple Activity Timeline */}
               <div className="space-y-3 pt-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest block font-sans">AUDIT DISPATCH TIMELINE & TRACE</span>
-                  <span className="text-[9.5px] text-primary-teal dark:text-secondary-teal font-bold border border-primary-teal/20 bg-primary-teal/10 px-2 py-0.5 rounded uppercase font-mono">Verified compliant</span>
+                  <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest block font-sans">Activity Timeline</span>
                 </div>
                 
                 <div className="relative pl-6 border-l-2 border-brand-border space-y-4 ml-1">
+                  {/* Created */}
                   <div className="relative">
                     <span className="absolute -left-[31px] top-0.5 w-4.5 h-4.5 rounded-full bg-emerald-500 border-2 border-brand-surface ring-4 ring-emerald-500/10 text-[10px] text-white flex items-center justify-center font-extrabold pb-0.5">✓</span>
                     <div>
-                      <h5 className="text-xs font-extrabold text-brand-title">Incident Reported & System Logged</h5>
-                      <span className="text-[10px] text-brand-muted block font-mono mt-0.5">June 8, 2026 at 2:30 PM UTC</span>
+                      <h5 className="text-xs font-extrabold text-brand-title">Request Created</h5>
+                      <span className="text-[10px] text-brand-muted block font-mono mt-0.5">{new Date(selectedRequest.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
 
+                  {/* Pending */}
                   <div className="relative">
                     <span className={`absolute -left-[31px] top-0.5 w-4.5 h-4.5 rounded-full border-2 border-brand-surface ring-4 transition-all ${
-                      ['Assigned', 'In Progress', 'Completed'].includes(selectedRequest.status)
+                      ['Pending', 'Assigned', 'In Progress', 'Completed'].includes(selectedRequest.status)
                         ? 'bg-emerald-500 ring-emerald-500/10 text-[10px] text-white flex items-center justify-center font-extrabold pb-0.5'
                         : 'bg-brand-alternate ring-brand-alternate/10 text-brand-muted'
                     }`}>
-                      {['Assigned', 'In Progress', 'Completed'].includes(selectedRequest.status) ? '✓' : ''}
+                      {['Pending', 'Assigned', 'In Progress', 'Completed'].includes(selectedRequest.status) ? '✓' : ''}
                     </span>
                     <div>
-                      <h5 className="text-xs font-extrabold text-brand-title">Technician Assured & Displaced</h5>
-                      <p className="text-[11px] text-brand-body font-light mt-0.5 animate-in fade-in">
-                        {selectedRequest.assignedTo 
-                          ? `Automated routing allocation complete: ${selectedRequest.assignedTo}` 
-                          : 'Pending technician availability check'}
-                      </p>
+                      <h5 className="text-xs font-extrabold text-brand-title">Pending</h5>
                     </div>
                   </div>
 
+                  {/* In Progress */}
                   <div className="relative">
                     <span className={`absolute -left-[31px] top-0.5 w-4.5 h-4.5 rounded-full border-2 border-brand-surface ring-4 transition-all ${
                       ['In Progress', 'Completed'].includes(selectedRequest.status)
                         ? 'bg-emerald-500 ring-emerald-500/10 text-[10px] text-white flex items-center justify-center font-extrabold pb-0.5'
-                        : 'bg-brand-alternate ring-brand-alternate/10'
+                        : 'bg-brand-alternate ring-brand-alternate/10 text-brand-muted'
                     }`}>
                       {['In Progress', 'Completed'].includes(selectedRequest.status) ? '✓' : ''}
                     </span>
                     <div>
-                      <h5 className="text-xs font-extrabold text-brand-title">Mitigation Commenced on Site</h5>
-                      <p className="text-[11px] text-brand-body font-light mt-0.5">Diagnostics verification, power-bypass or safety loop mitigation initiated.</p>
+                      <h5 className="text-xs font-extrabold text-brand-title">In Progress</h5>
                     </div>
                   </div>
 
+                  {/* Completed */}
                   <div className="relative font-sans">
                     <span className={`absolute -left-[31px] top-0.5 w-4.5 h-4.5 rounded-full border-2 border-brand-surface ring-4 transition-all ${
                       selectedRequest.status === 'Completed'
@@ -526,46 +634,129 @@ export default function MaintenanceView({
                       {selectedRequest.status === 'Completed' ? '✓' : ''}
                     </span>
                     <div>
-                      <h5 className="text-xs font-bold text-brand-title">Cleared & Resolved</h5>
-                      <p className="text-[11px] text-brand-body font-light mt-0.5">Signed-off as safe. Auto-notified to resident portfolio dashboard.</p>
+                      <h5 className="text-xs font-bold text-brand-title">Completed</h5>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Rating Section for Tenants on Completed Requests */}
+              {currentUser.role === 'Tenant' && selectedRequest.status === 'Completed' && (
+                <div className="bg-primary-teal/10 border border-primary-teal/20 rounded-xl p-4 space-y-3 font-sans">
+                  <div className="flex items-center space-x-1.5 text-primary-teal dark:text-secondary-teal font-extrabold uppercase tracking-wider text-[10px]">
+                    <Star className="w-4 h-4 shrink-0 text-primary-teal dark:text-secondary-teal" />
+                    <span>Rate Your Experience</span>
+                  </div>
+                  
+                  {selectedRequest.rating ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-5 h-5 ${
+                                star <= (selectedRequest.rating || 0)
+                                  ? 'text-amber-400 fill-amber-400'
+                                  : 'text-brand-muted'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm font-bold text-brand-title">{selectedRequest.rating}/5</span>
+                      </div>
+                      {selectedRequest.reviewComment && (
+                        <div className="p-3 bg-brand-alternate/40 rounded-lg border border-brand-border">
+                          <p className="text-xs text-brand-body italic">"{selectedRequest.reviewComment}"</p>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-brand-muted font-mono">Rated on {selectedRequest.ratedAt ? new Date(selectedRequest.ratedAt).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-brand-body font-light leading-relaxed">
+                        How satisfied were you with the maintenance service? Please rate your experience (1-5 stars).
+                      </p>
+                      
+                      <div className="flex items-center space-x-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setRating(star)}
+                            onMouseEnter={() => setRating(star)}
+                            className="transition-transform hover:scale-110 cursor-pointer"
+                            aria-label={`Rate ${star} stars`}
+                          >
+                            <Star
+                              className={`w-6 h-6 ${
+                                star <= rating
+                                  ? 'text-amber-400 fill-amber-400'
+                                  : 'text-brand-muted hover:text-amber-300'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                        {rating > 0 && (
+                          <span className="text-sm font-bold text-brand-title ml-2">{rating}/5</span>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-brand-body uppercase tracking-wider block">Optional Feedback</label>
+                        <textarea
+                          rows={2}
+                          placeholder="Share your experience (optional)"
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          className="w-full px-3 py-2 bg-brand-alternate border border-brand-border rounded-lg text-xs focus:outline-none focus:border-primary-teal focus:ring-2 focus:ring-primary-teal/15 text-brand-title transition-all font-sans placeholder-slate-400 dark:placeholder-slate-500 resize-none"
+                          maxLength={300}
+                        />
+                        <p className="text-[9px] text-brand-muted font-light">{reviewComment.length} / 300 characters</p>
+                      </div>
+                      
+                      <button
+                        onClick={handleRateRequest}
+                        disabled={rating === 0 || rateTicketMutation.isPending}
+                        className="px-4 py-2 bg-[#14B8A6] hover:bg-[#0F766E] disabled:bg-brand-muted disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold shadow-md cursor-pointer transition-all flex items-center space-x-1.5"
+                      >
+                        <Star className="w-3.5 h-3.5" />
+                        <span>{rateTicketMutation.isPending ? 'Submitting...' : 'Submit Rating'}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Status workflow transitions for Landlords / Technicians */}
               {currentUser.role !== 'Tenant' && (
                 <div className="bg-primary-teal/10 border border-primary-teal/20 rounded-xl p-4 space-y-3 font-sans">
                   <div className="flex items-center space-x-1.5 text-primary-teal dark:text-secondary-teal font-extrabold uppercase tracking-wider text-[10px]">
                     <UserCheck className="w-4 h-4 shrink-0 text-primary-teal dark:text-secondary-teal" />
-                    <span>State Manager Control Console</span>
+                    <span>Status Controls</span>
                   </div>
-                  <p className="text-xs text-brand-body font-light leading-relaxed">Modify state indicators for real-time compliance metrics audits and live tenant transparency updates.</p>
+                  <p className="text-xs text-brand-body font-light leading-relaxed">Update the operational status of this maintenance request.</p>
                   
                   <div className="flex flex-wrap gap-2 pt-1">
                     <button
-                      onClick={() => handleStatusUpdate('Assigned')}
+                      onClick={() => handleStatusUpdate('Pending')}
                       type="button"
-                      id="action-set-assigned"
-                      className={`px-3 py-1.8 text-[11px] font-bold rounded-lg border transition-all cursor-pointer min-h-[36px] ${selectedRequest.status === 'Assigned' ? 'bg-primary-teal text-white border-primary-teal shadow-xs' : 'bg-brand-alternate text-brand-body border-brand-border hover:bg-brand-surface hover:border-brand-body'}`}
+                      className={`px-3 py-1.8 text-[11px] font-bold rounded-lg border transition-all cursor-pointer min-h-[36px] ${selectedRequest.status === 'Pending' ? 'bg-primary-teal text-white border-primary-teal shadow-xs' : 'bg-brand-alternate text-brand-body border-brand-border hover:bg-brand-surface hover:border-brand-body'}`}
                     >
-                      Assign Staff
+                      Pending
                     </button>
                     <button
                       onClick={() => handleStatusUpdate('In Progress')}
                       type="button"
-                      id="action-set-inprogress"
                       className={`px-3 py-1.8 text-[11px] font-bold rounded-lg border transition-all cursor-pointer min-h-[36px] ${selectedRequest.status === 'In Progress' ? 'bg-primary-teal text-white border-primary-teal shadow-xs' : 'bg-brand-alternate text-brand-body border-brand-border hover:bg-brand-surface hover:border-brand-body'}`}
                     >
-                      Start Repair Work
+                      In Progress
                     </button>
                     <button
                       onClick={() => handleStatusUpdate('Completed')}
                       type="button"
-                      id="action-set-completed"
                       className={`px-3 py-1.8 text-[11px] font-bold rounded-lg border transition-all cursor-pointer min-h-[36px] ${selectedRequest.status === 'Completed' ? 'bg-emerald-600 text-white border-brand-border' : 'bg-brand-alternate text-brand-body border-brand-border hover:bg-brand-surface hover:border-brand-body'}`}
                     >
-                      Sign-off & Resolve
+                      Completed
                     </button>
                   </div>
                 </div>
@@ -579,8 +770,10 @@ export default function MaintenanceView({
                 🛠️
               </div>
               <div>
-                <h5 className="font-extrabold text-brand-title text-xs">No dispatch chosen</h5>
-                <p className="text-[11px] text-brand-body max-w-xs mt-1 leading-normal font-light">Select a service ticket on the left pane to analyze diagnostic timeline and assign technical resources.</p>
+                <h5 className="font-extrabold text-brand-title text-xs">No maintenance request selected.</h5>
+                <p className="text-[11px] text-brand-body max-w-xs mt-1 leading-normal font-light">
+                  {currentUser.role === 'Tenant' ? "Select a maintenance request to view its details and current status." : "Select a maintenance request to view its details and update its status."}
+                </p>
               </div>
             </div>
           )}
@@ -597,7 +790,7 @@ export default function MaintenanceView({
             <div className="flex justify-between items-center border-b border-brand-border pb-3">
               <div className="flex items-center space-x-2">
                 <Wrench className="w-5 h-5 text-primary-teal" />
-                <h3 className="text-base sm:text-lg font-extrabold text-brand-title">Dispatch Maintenance Team</h3>
+                <h3 className="text-base sm:text-lg font-extrabold text-brand-title">{editingRequest ? 'Edit Maintenance Request' : 'Create Maintenance Request'}</h3>
               </div>
               <button 
                 onClick={() => setShowCreateModal(false)}
@@ -622,24 +815,26 @@ export default function MaintenanceView({
             {/* Modal Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Incident Brief Title</label>
-                  <span className="text-[10px] text-brand-muted font-mono font-bold uppercase">SLA requirement</span>
+              {currentUser.role !== 'Tenant' && (
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Incident Brief Title</label>
+                    <span className="text-[10px] text-brand-muted font-mono font-bold uppercase">SLA requirement</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="e.g. Toilet tank overflowing and corridor floor damage"
+                    value={title}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      if (e.target.value.length >= 8) setFormError(null);
+                    }}
+                    className={`w-full px-4 py-2.5 bg-brand-alternate border rounded-xl text-sm focus:outline-none focus:ring-2 text-brand-title transition-all font-sans font-medium placeholder-slate-400 dark:placeholder-slate-500 ${formTouched && (!title.trim() || title.length < 8) ? 'border-rose-500 focus:ring-rose-500/20' : 'border-brand-border focus:border-primary-teal focus:ring-primary-teal/15'}`}
+                    aria-invalid={formTouched && (!title.trim() || title.length < 8)}
+                  />
+                  <p className="text-[10px] text-brand-muted font-light mt-0.5">Stipulate exact room location and symptoms for fast dispatch. Minimum 8 characters.</p>
                 </div>
-                <input
-                  type="text"
-                  placeholder="e.g. Toilet tank overflowing and corridor floor damage"
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    if (e.target.value.length >= 8) setFormError(null);
-                  }}
-                  className={`w-full px-4 py-2.5 bg-brand-alternate border rounded-xl text-sm focus:outline-none focus:ring-2 text-brand-title transition-all font-sans font-medium placeholder-slate-400 dark:placeholder-slate-500 ${formTouched && (!title.trim() || title.length < 8) ? 'border-rose-500 focus:ring-rose-500/20' : 'border-brand-border focus:border-primary-teal focus:ring-primary-teal/15'}`}
-                  aria-invalid={formTouched && (!title.trim() || title.length < 8)}
-                />
-                <p className="text-[10px] text-brand-muted font-light mt-0.5">Stipulate exact room location and symptoms for fast dispatch. Minimum 8 characters.</p>
-              </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -738,14 +933,14 @@ export default function MaintenanceView({
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2.5 bg-brand-alternate border border-brand-border text-brand-body hover:text-brand-title hover:bg-brand-alternate/85 rounded-xl font-semibold text-xs transition-colors text-[11px] min-h-[40px]"
                 >
-                  Discard Case
+                  Discard
                 </button>
                 <button
                   type="submit"
                   id="submit-create-ticket-btn"
                   className="px-6 py-2.5 bg-[#14B8A6] hover:bg-[#0F766E] focus:ring-2 focus:ring-[#14B8A6] text-white rounded-xl text-xs font-semibold shadow-md cursor-pointer transition-all"
                 >
-                  Dispatch Maintenance Crew
+                  {editingRequest ? 'Save Changes' : 'Create Request'}
                 </button>
               </div>
 

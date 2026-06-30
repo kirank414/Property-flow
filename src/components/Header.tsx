@@ -386,55 +386,7 @@ export default function Header({
           )}
         </div>
 
-        {/* Premium Theme Selector Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowThemeMenu(!showThemeMenu);
-              setShowNotifications(false);
-              setShowQuickAdd(false);
-            }}
-            className="p-2.5 bg-brand-alternate hover:bg-brand-hover text-brand-body rounded-xl transition-all cursor-pointer relative min-h-[44px] min-w-[44px] flex items-center justify-center focus:ring-2 focus:ring-primary-teal/30 focus:outline-none"
-            aria-label="Toggle visual theme mode"
-            aria-expanded={showThemeMenu}
-          >
-            {theme === 'light' && <Sun className="w-4.5 h-4.5 text-amber-500" />}
-            {theme === 'dark' && <Moon className="w-4.5 h-4.5 text-secondary-teal" />}
-            {theme === 'system' && <Laptop className="w-4.5 h-4.5 text-teal-600 dark:text-teal-400" />}
-          </button>
 
-          {showThemeMenu && (
-            <div className="absolute right-0 mt-2.5 w-36 bg-brand-surface border border-brand-border rounded-xl shadow-xl py-1.5 z-50 text-xs text-brand-title animate-in fade-in slide-in-from-top-1">
-              <button
-                onClick={() => {
-                  onThemeChange?.('light');
-                  setShowThemeMenu(false);
-                }}
-                className={`w-full px-3 py-2 hover:bg-brand-alternate text-left flex items-center space-x-2 font-medium ${theme === 'light' ? 'text-primary-teal font-extrabold' : 'text-brand-body'}`}
-              >
-                <Sun className="w-3.5 h-3.5" /> <span>Light Mode</span>
-              </button>
-              <button
-                onClick={() => {
-                  onThemeChange?.('dark');
-                  setShowThemeMenu(false);
-                }}
-                className={`w-full px-3 py-2 hover:bg-brand-alternate text-left flex items-center space-x-2 font-medium ${theme === 'dark' ? 'text-primary-teal font-extrabold' : 'text-brand-body'}`}
-              >
-                <Moon className="w-3.5 h-3.5" /> <span>Dark Mode</span>
-              </button>
-              <button
-                onClick={() => {
-                  onThemeChange?.('system');
-                  setShowThemeMenu(false);
-                }}
-                className={`w-full px-3 py-2 hover:bg-brand-alternate text-left flex items-center space-x-2 font-medium ${theme === 'system' ? 'text-primary-teal font-extrabold' : 'text-brand-body'}`}
-              >
-                <Laptop className="w-3.5 h-3.5" /> <span>System</span>
-              </button>
-            </div>
-          )}
-        </div>
 
         {/* Dynamic Alarm Bell Button Component with Live Dropdown */}
         <div className="relative">
@@ -609,12 +561,18 @@ export default function Header({
           aria-label="Manage user profile details"
           role="link"
         >
-          <img 
-            src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'} 
-            alt={currentUser.name} 
-            className="w-8.5 h-8.5 rounded-full object-cover ring-2 ring-slate-100/95 dark:ring-[#334155]"
-            referrerPolicy="no-referrer"
-          />
+          {currentUser.avatarUrl ? (
+            <img 
+              src={currentUser.avatarUrl} 
+              alt={currentUser.name} 
+              className="w-8.5 h-8.5 rounded-full object-cover ring-2 ring-slate-100/95 dark:ring-[#334155]"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-8.5 h-8.5 rounded-full ring-2 ring-slate-100/95 dark:ring-[#334155] bg-gradient-to-br from-primary-teal/30 to-primary-teal/10 text-primary-teal flex items-center justify-center text-xs font-bold shrink-0">
+              {currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2)}
+            </div>
+          )}
           <span className="text-xs font-bold text-slate-700 dark:text-[#CBD5E1] hidden lg:inline max-w-[100px] truncate leading-none">{currentUser.name}</span>
         </div>
 

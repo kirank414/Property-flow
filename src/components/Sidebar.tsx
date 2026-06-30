@@ -23,7 +23,7 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
   const menuItems = [
     { id: 'dashboard', label: 'Operations Feed', icon: LayoutDashboard },
     { id: 'properties', label: 'Properties Index', icon: Building2 },
-    { id: 'maintenance', label: 'Repair Dispatch', icon: Wrench, badge: 'activeRequests' },
+    { id: 'maintenance', label: 'Maintenance Requests', icon: Wrench, badge: 'activeRequests' },
     { id: 'amenities', label: 'Facility Booking', icon: Calendar },
     { id: 'analytics', label: 'Platform KPIs', icon: TrendingUp },
     { id: 'monitor', label: 'Real-Time Monitoring', icon: Activity },
@@ -62,12 +62,18 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
 
       {/* User Info Capsule */}
       <div className="p-4 border-b border-slate-800 dark:border-[#334155] bg-slate-950/45 flex items-center space-x-3">
-        <img 
-          src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'} 
-          alt={currentUser.name} 
-          className="w-10 h-10 rounded-xl object-cover ring-2 ring-primary-teal/40"
-          referrerPolicy="no-referrer"
-        />
+        {currentUser.avatarUrl ? (
+          <img 
+            src={currentUser.avatarUrl} 
+            alt={currentUser.name} 
+            className="w-10 h-10 rounded-xl object-cover ring-2 ring-primary-teal/40"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-xl ring-2 ring-primary-teal/40 bg-gradient-to-br from-primary-teal/30 to-primary-teal/10 text-primary-teal flex items-center justify-center text-sm font-bold shrink-0">
+            {currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2)}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="text-xs font-bold text-white truncate leading-snug">{currentUser.name}</div>
           <div className="flex items-center space-x-1.5 mt-0.5">
@@ -128,7 +134,14 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
       </nav>
 
       {/* Logout Row */}
-      <div className="p-4 border-t border-slate-800 dark:border-[#334155]">
+      <div className="p-4 border-t border-slate-800 dark:border-[#334155] space-y-2">
+        <button
+          onClick={() => setActiveTab('landing')}
+          className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all border border-transparent cursor-pointer"
+        >
+          <Building2 className="w-4.5 h-4.5 text-slate-450" />
+          <span className="font-sans">Back to Website</span>
+        </button>
         <button
           onClick={onLogout}
           className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center space-x-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all border border-transparent cursor-pointer"
