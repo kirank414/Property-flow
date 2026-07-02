@@ -1,14 +1,13 @@
 import { Router } from 'express';
 import { MaintenanceController } from './maintenance.controller';
 import { requireAuth } from '../../middlewares/auth';
-import { requirePermission } from '../../middlewares/rbac';
+import { requireRoles } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
 import {
   createRequestSchema,
   assignTechnicianSchema,
   updateStatusSchema,
-  requestIdParamSchema,
-} from './maintenance.zod';
+  requestIdParamSchema} from './maintenance.zod';
 
 const router = Router();
 
@@ -16,49 +15,55 @@ router.use(requireAuth);
 
 router.post(
   '/',
-  requirePermission('maintenance:create'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF', 'TENANT']),
   validate(createRequestSchema),
   MaintenanceController.create,
 );
 
 router.get(
   '/',
-  requirePermission('maintenance:view_all'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF', 'TENANT']),
   MaintenanceController.list,
 );
 
 router.get(
   '/sla',
-  requirePermission('maintenance:view_all'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF']),
   MaintenanceController.getSLA,
 );
 
 router.get(
   '/:id',
-  requirePermission('properties:view'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF', 'TENANT']),
   validate(requestIdParamSchema),
   MaintenanceController.getById,
 );
 
 router.get(
   '/:id/timeline',
-  requirePermission('properties:view'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF', 'TENANT']),
   validate(requestIdParamSchema),
   MaintenanceController.getTimeline,
 );
 
 router.patch(
   '/:id/assign',
-  requirePermission('maintenance:assign'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF']),
   validate(assignTechnicianSchema),
   MaintenanceController.assign,
 );
 
 router.patch(
   '/:id/status',
-  requirePermission('maintenance:update_status'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF']),
   validate(updateStatusSchema),
   MaintenanceController.updateStatus,
+);
+
+router.patch(
+  '/:id/rate',
+  requireRoles(['TENANT']),
+  MaintenanceController.rateRequest,
 );
 
 export const maintenanceRoutes = router;

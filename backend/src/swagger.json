@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Zillow Backend API Specs",
+    "title": "PropertyFlow Backend API Specs",
     "version": "1.0.0",
-    "description": "Production-ready REST API documentation for Zillow"
+    "description": "Production-ready REST API documentation for PropertyFlow"
   },
   "servers": [
     {

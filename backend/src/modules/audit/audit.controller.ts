@@ -18,11 +18,7 @@ export class AuditController {
               id: true,
               email: true,
               firstName: true,
-              lastName: true,
-            },
-          },
-        },
-      });
+              lastName: true}}}});
 
       const total = await prisma.auditLog.count();
 
@@ -38,16 +34,12 @@ export class AuditController {
             entity: log.entity,
             entityId: log.entityId,
             details: log.details,
-            createdAt: log.createdAt.toISOString(),
-          })),
+            createdAt: log.createdAt.toISOString()})),
           meta: {
             total,
             page,
             limit,
-            totalPages: Math.ceil(total / limit),
-          },
-        },
-      });
+            totalPages: Math.ceil(total / limit)}}});
     } catch (error) {
       next(error);
     }

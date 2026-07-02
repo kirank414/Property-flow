@@ -25,12 +25,6 @@ jest.mock('../src/config/db', () => ({
       create: jest.fn(),
       findFirst: jest.fn(),
       count: jest.fn(),
-    },
-    userRole: {
-      findMany: jest.fn(),
-      create: jest.fn(),
-    },
-    role: {
       findUnique: jest.fn(),
     },
     property: {
@@ -53,6 +47,9 @@ jest.mock('../src/config/db', () => ({
       findUnique: jest.fn(),
       count: jest.fn(),
       update: jest.fn(),
+    },
+    notification: {
+      create: jest.fn(),
     },
     $transaction: jest.fn((callback) => callback(prisma)),
     $queryRaw: jest.fn().mockResolvedValue([1]),
@@ -88,6 +85,14 @@ describe('Zillow Integration Tests', () => {
     mockToken = 'mock-access-token';
   });
 
+  beforeEach(() => {
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+      id: 'a1111111-1111-1111-1111-111111111111',
+      role: 'TENANT',
+      email: 'tenant@example.com'
+    });
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -97,9 +102,10 @@ describe('Zillow Integration Tests', () => {
   // ==========================================
   describe('Authentication Module', () => {
     it('should successfully mock authenticate accessing secure routes', async () => {
-      (prisma.userRole.findMany as jest.Mock).mockResolvedValue([
-        { role: { name: 'Tenant' } },
-      ]);
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: 'a1111111-1111-1111-1111-111111111111',
+        role: 'TENANT',
+      });
       (redisClient.get as jest.Mock).mockResolvedValue(JSON.stringify(['properties:view']));
 
       const res = await request(app)
@@ -120,9 +126,10 @@ describe('Zillow Integration Tests', () => {
   // ==========================================
   describe('Role-Based Access Control', () => {
     it('should prevent Tenant from using Admin-only route configurations', async () => {
-      (prisma.userRole.findMany as jest.Mock).mockResolvedValue([
-        { role: { name: 'Tenant' } },
-      ]);
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: 'a1111111-1111-1111-1111-111111111111',
+        role: 'TENANT',
+      });
       // Tenants do not have 'system:configure' permission
       (redisClient.get as jest.Mock).mockResolvedValue(JSON.stringify(['properties:view']));
 
@@ -274,6 +281,10 @@ describe('Zillow Integration Tests', () => {
   // ==========================================
   describe('Dashboard KPIs & Peak Hour Aggregations', () => {
     it('should return compiled KPI dashboard metrics', async () => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: 'a1111111-1111-1111-1111-111111111111',
+        role: 'MANAGER',
+      });
       (redisClient.get as jest.Mock).mockResolvedValue(JSON.stringify(['system:configure']));
       (prisma.property.count as jest.Mock).mockResolvedValue(5);
       (prisma.property.findMany as jest.Mock).mockResolvedValue([

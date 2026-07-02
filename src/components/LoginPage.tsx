@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { User, Role } from '../types.ts';
 import { AuthService } from '../api/services';
+import { loginValidationSchema } from '../../shared/zod';
 
 interface LoginPageProps {
   users: User[];
@@ -22,8 +23,8 @@ interface LoginPageProps {
 
 export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPageProps) {
   const [activeTabRole, setActiveTabRole] = useState<Role>('Manager');
-  const [email, setEmail] = useState('marcus@propertyflow.com');
-  const [password, setPassword] = useState('••••••••');
+  const [email, setEmail] = useState('manager@propertyflow.com');
+  const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -36,39 +37,41 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetSubmitted, setResetSubmitted] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Quick select helper profiles
   const profiles: Record<Role, { email: string; name: string; desc: string; authScope: string }> = {
     Admin: {
-      email: 'eleanor@propertyflow.com',
-      name: 'Eleanor Vance',
+      email: 'admin@propertyflow.com',
+      name: 'System Admin',
       desc: 'Owner authorization level. Manage users, properties, amenities, and platform operations.',
-      authScope: 'Global platform level access controls.'
+      authScope: 'Global platform administration.'
     },
     Manager: {
-      email: 'marcus@propertyflow.com',
-      name: 'Marcus Brody',
-      desc: 'Portfolio operator role. Dispatches techs, manages listings, schedules bookings and views SLA metrics.',
-      authScope: 'All listed Evergreen and Peachtree estates.'
+      email: 'manager@propertyflow.com',
+      name: 'Property Manager',
+      desc: 'Portfolio operator role. Dispatches technicians, manages listings, and schedules bookings.',
+      authScope: 'All properties in portfolio.'
     },
     Staff: {
-      email: 'dave@propertyflow.com',
-      name: 'Dave Miller',
-      desc: 'Technical dispatcher staff. Updates task tracking logs, claims repair orders, completes site safety work.',
-      authScope: 'Local maintenance crew tickets.'
+      email: 'staff@propertyflow.com',
+      name: 'Support Staff',
+      desc: 'Maintenance staff role. Updates task tracking logs, claims repair orders, and completes site work.',
+      authScope: 'Assigned maintenance tickets.'
     },
     Tenant: {
-      email: 'sarah@propertyflow.com',
-      name: 'Sarah Connor',
-      desc: 'Rental occupant profile. Submits repair tickets, reserves skyline pools/court facilities.',
-      authScope: 'Dynamic assigned property suite.'
+      email: 'tenant.a@example.com',
+      name: 'Tenant A',
+      desc: 'Rental occupant role. Submits maintenance requests and reserves amenities.',
+      authScope: 'Assigned rental unit.'
     }
   };
 
   const selectQuickRole = (role: Role) => {
     setActiveTabRole(role);
     setEmail(profiles[role].email);
-    setPassword('••••••••');
+    setPassword('password123');
   };
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -79,9 +82,12 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
     setErrorMessage(null);
     setIsAuthenticating(true);
 
-    const actualPassword = password === '••••••••' ? 'password123' : password;
+    const actualPassword = password;
 
     try {
+      // Zod Validation
+      loginValidationSchema.parse({ email, password: actualPassword });
+      
       const userDto = await AuthService.login({ email, password: actualPassword });
       
       let role: 'Admin' | 'Manager' | 'Staff' | 'Tenant' = 'Tenant';
@@ -100,8 +106,12 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
 
       onLogin(user);
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Authentication failed.';
-      setErrorMessage(msg);
+      if (err.errors) {
+        // Zod validation error
+        setErrorMessage(err.errors[0].message);
+      } else {
+        setErrorMessage(err.response?.data?.error?.message || 'Invalid credentials. Please try again.');
+      }
     } finally {
       setIsAuthenticating(false);
     }
@@ -166,7 +176,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
         {/* Feature Slider Mockup */}
         <div className="space-y-6 relative z-10 max-w-lg">
           <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-primary-teal/25 border border-primary-teal/30 text-accent-teal uppercase tracking-widest inline-block leading-none">
-            Secure Sign-On Gateway
+            PropertyFlow Platform
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight font-sans">
             Secure Access to PropertyFlow
@@ -202,8 +212,8 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
 
         {/* Footer info lock */}
         <div className="text-[11px] text-slate-400 font-mono relative z-10 flex items-center space-x-1">
-          <KeyRound className="w-3.5 h-3.5 text-[#14B8A6]" />
-          <span>AES-256 Multi-Factor Authenticated Core Logs.</span>
+          <CheckCircle className="w-3.5 h-3.5 text-[#14B8A6]" />
+          <span>All platform connections are encrypted.</span>
         </div>
       </div>
 
@@ -241,9 +251,9 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
           {mode === 'login' && (
             <>
               <div className="space-y-2">
-                <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Security Sign-In</h1>
+                <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Sign In</h1>
                 <p className="text-sm text-[#CBD5E1] font-light">
-                  Select a simulated test role below to immediately populate verified mock credential parameters.
+                  Select a demo user role below to quickly log in and test the platform capabilities.
                 </p>
               </div>
 
@@ -276,10 +286,10 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                 <div className="bg-[#111827] border border-[#334155] rounded-lg p-3 text-xs text-[#CBD5E1] space-y-1">
                   <div className="flex justify-between items-center bg-[#1E293B] p-1.5 rounded-md">
                     <span className="font-extrabold text-[#F8FAFC]">
-                      {activeTabRole === 'Manager' && '🏨 Property Manager Profile'}
-                      {activeTabRole === 'Admin' && '🛡️ System Administrator Profile'}
-                      {activeTabRole === 'Staff' && '🛠️ Maintenance Service Officer'}
-                      {activeTabRole === 'Tenant' && '🔑 Registered Rental Tenant'}
+                      {activeTabRole === 'Manager' && '🏨 Property Manager'}
+                      {activeTabRole === 'Admin' && '🛡️ System Administrator'}
+                      {activeTabRole === 'Staff' && '🛠️ Maintenance Staff'}
+                      {activeTabRole === 'Tenant' && '🔑 Rental Tenant'}
                     </span>
                     <span className="text-[9px] font-mono text-[#14B8A6] font-bold uppercase">{activeTabRole} LEVEL</span>
                   </div>
@@ -374,7 +384,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                   id="submit-login-btn"
                   className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md shadow-primary-teal/15 hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
                 >
-                  <span>Authenticate as {activeTabRole}</span>
+                  <span>Sign In as {activeTabRole}</span>
                   <ArrowRight className="w-4 h-4 text-white" />
                 </button>
               </form>
@@ -384,9 +394,9 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
           {mode === 'forgot' && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Recover Access</h1>
+                <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Reset Password</h1>
                 <p className="text-sm text-[#CBD5E1] font-light">
-                  Input your security work email, and we will dispatch a passcode reset link.
+                  Enter your email address below to receive a password reset link.
                 </p>
               </div>
 
@@ -396,9 +406,9 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                     📧
                   </div>
                   <div className="space-y-1.5">
-                    <h4 className="font-extrabold text-[#F8FAFC] text-sm">Dispatched Verification Link</h4>
+                    <h4 className="font-extrabold text-[#F8FAFC] text-sm">Password Reset Link Sent</h4>
                     <p className="text-xs text-[#CBD5E1] leading-relaxed font-light">
-                      A secure gateway connection key has been sent to <span className="font-semibold text-white">{forgotEmail}</span>. Follow the directions in the message to finish.
+                      A password reset link has been sent to <span className="font-semibold text-white">{forgotEmail}</span>. Please check your email to complete the process.
                     </p>
                   </div>
                   
@@ -407,7 +417,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                       onClick={() => setMode('reset')}
                       className="w-full py-2.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-xs rounded-xl shadow-sm cursor-pointer transition-colors"
                     >
-                      Enter Simulation Reset Screen
+                      Proceed to Reset Password
                     </button>
                   </div>
                 </div>
@@ -415,7 +425,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                 <form onSubmit={handleForgotSubmit} className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
-                      Work Email Address
+                      Email Address
                     </label>
                     <div className="relative">
                       <Mail className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -434,7 +444,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                     type="submit"
                     className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
                   >
-                    <span>Send Secure Recovery Link</span>
+                    <span>Send Recovery Link</span>
                     <ArrowRight className="w-4 h-4 text-white" />
                   </button>
                 </form>
@@ -445,7 +455,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                   onClick={() => setMode('login')}
                   className="text-xs text-[#14B8A6] hover:text-[#14B8A6]/90 font-bold"
                 >
-                  ← Back to Security Sign-In
+                  ← Back to Sign In
                 </button>
               </div>
             </div>
@@ -456,61 +466,75 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
               <div className="space-y-2">
                 <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Change Password</h1>
                 <p className="text-sm text-[#CBD5E1] font-light">
-                  Establish a new master passcode configuration for your credential envelope.
+                  Enter your new password below.
                 </p>
               </div>
 
               {resetSubmitted ? (
                 <div className="bg-[#1E293B] border border-[#334155] p-6 rounded-2xl text-center space-y-4 animate-in fade-in">
-                  <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/30 text-emerald-450 rounded-full flex items-center justify-center mx-auto text-xl">
+                  <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/30 text-emerald-455 rounded-full flex items-center justify-center mx-auto text-xl">
                     ✓
                   </div>
                   <div className="space-y-1.5">
-                    <h4 className="font-extrabold text-[#F8FAFC] text-sm">Passcode Reconfigured Successfully</h4>
+                    <h4 className="font-extrabold text-[#F8FAFC] text-sm">Password Changed Successfully</h4>
                     <p className="text-xs text-[#CBD5E1] leading-relaxed font-light">
-                      Your master security password configuration has been successfully updated. Redirecting to signature portal.
+                      Your password has been successfully updated. Redirecting to the sign in page.
                     </p>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleResetSubmit} className="space-y-4">
                   {resetError && (
-                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-sans">
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-450 text-xs font-sans">
                       {resetError}
                     </div>
                   )}
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
-                      New Security Passcode
+                      New Password
                     </label>
                     <div className="relative">
                       <Lock className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
-                        type="password"
+                        type={showNewPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Min 6 characters"
-                        className="w-full pl-10 pr-4 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
+                        className="w-full pl-10 pr-10 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-white"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
-                      Verify New Passcode
+                      Confirm New Password
                     </label>
                     <div className="relative">
                       <Lock className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
-                        type="password"
+                        type={showConfirmPassword ? 'text' : 'password'}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-type password"
-                        className="w-full pl-10 pr-4 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
+                        className="w-full pl-10 pr-10 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-white"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
@@ -518,7 +542,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                     type="submit"
                     className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
                   >
-                    <span>Save Master Passcode</span>
+                    <span>Save New Password</span>
                     <ArrowRight className="w-4 h-4 text-white" />
                   </button>
                 </form>
@@ -539,7 +563,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
 
         {/* Bottom credits */}
         <div className="text-center text-[10px] text-[#94A3B8] font-mono mt-8">
-          PropertyFlow Systems Secure Gateway. Authorized Personnel ONLY.
+          PropertyFlow Systems.
         </div>
 
       </div>

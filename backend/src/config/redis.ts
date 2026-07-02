@@ -33,6 +33,8 @@ export const redisConnection = {
   password: new URL(env.REDIS_URL).password || undefined,
 };
 
+const inMemoryStore = new Map<string, any>();
+
 // Initialize clients
 export const connectRedis = async () => {
   try {
@@ -44,5 +46,10 @@ export const connectRedis = async () => {
     }
   } catch (error) {
     console.warn('⚠️ Redis connection failed. Bypassing Redis clustering and falling back to in-memory mode.', error);
+    // Setup in-memory fallback methods
+    Object.defineProperty(redisClient, 'isOpen', { get: () => false, configurable: true });
+    (redisClient as any).set = async (key: string, val: any) => { inMemoryStore.set(key, val); };
+    (redisClient as any).get = async (key: string) => inMemoryStore.get(key) || null;
+    (redisClient as any).del = async (key: string) => { inMemoryStore.delete(key); };
   }
 };

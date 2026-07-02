@@ -48,6 +48,9 @@ export interface MaintenanceRequest {
   assignedTo?: string;
   assignedToId?: string;
   category: string;
+  rating?: number;
+  reviewComment?: string;
+  ratedAt?: string;
   timeline?: any[];
   comments?: any[];
 }
@@ -70,6 +73,7 @@ export interface BookingSlot {
   amenityName: string;
   propertyId: string;
   user: string;
+  date: string;
   start: string;
   end: string;
   status: BookingStatus;

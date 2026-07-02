@@ -10,8 +10,7 @@ export class BookingsController {
       const booking = await bookingsService.createBooking(req.body);
       res.status(201).json({
         status: 'success',
-        data: { booking },
-      });
+        data: { booking }});
     } catch (error) {
       next(error);
     }
@@ -25,8 +24,7 @@ export class BookingsController {
 
       res.status(200).json({
         status: 'success',
-        data: { booking },
-      });
+        data: { booking }});
     } catch (error) {
       next(error);
     }
@@ -39,8 +37,7 @@ export class BookingsController {
 
       res.status(200).json({
         status: 'success',
-        data: { booking },
-      });
+        data: { booking }});
     } catch (error) {
       next(error);
     }
@@ -57,8 +54,7 @@ export class BookingsController {
 
       res.status(200).json({
         status: 'success',
-        data: result,
-      });
+        data: result});
     } catch (error) {
       next(error);
     }
@@ -66,17 +62,22 @@ export class BookingsController {
 
   static async list(req: Request, res: Response, next: NextFunction) {
     try {
+      const performer = req.user!;
       const { tenantId, amenityId, status } = req.query;
+      
+      let targetTenantId = tenantId as string;
+      if (performer.role === 'TENANT') {
+        targetTenantId = performer.id;
+      }
+
       const bookings = await bookingsService.listBookings({
-        tenantId: tenantId as string,
+        tenantId: targetTenantId,
         amenityId: amenityId as string,
-        status: status as BookingStatus,
-      });
+        status: status as BookingStatus});
 
       res.status(200).json({
         status: 'success',
-        data: { bookings },
-      });
+        data: { bookings }});
     } catch (error) {
       next(error);
     }
@@ -89,8 +90,7 @@ export class BookingsController {
 
       res.status(200).json({
         status: 'success',
-        data: { booking },
-      });
+        data: { booking }});
     } catch (error) {
       next(error);
     }
@@ -103,8 +103,7 @@ export class BookingsController {
 
       res.status(200).json({
         status: 'success',
-        data: { booking },
-      });
+        data: { booking }});
     } catch (error) {
       next(error);
     }

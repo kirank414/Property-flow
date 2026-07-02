@@ -24,7 +24,7 @@ export const propertyValidationSchema = z.object({
   type: z.string().min(1, 'Property type is required'),
   units: z.number().int().positive('Units must be a positive integer'),
   occupancyRate: z.number().min(0).max(100).default(100),
-  imageUrl: z.string().url('Invalid image URL').optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
   revenue: z.number().nonnegative('Revenue cannot be negative').default(0),
 });
 

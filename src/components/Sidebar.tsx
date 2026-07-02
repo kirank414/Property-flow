@@ -41,7 +41,7 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
       return ['dashboard', 'maintenance', 'amenities', 'monitor', 'profile'].includes(item.id);
     }
     if (currentUser.role === 'Manager') {
-      return ['dashboard', 'properties', 'maintenance', 'amenities', 'analytics', 'monitor', 'profile'].includes(item.id);
+      return ['dashboard', 'maintenance', 'amenities', 'analytics', 'monitor', 'profile'].includes(item.id);
     }
     // Admin sees all items
     return true;

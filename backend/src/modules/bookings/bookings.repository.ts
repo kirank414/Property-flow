@@ -7,35 +7,42 @@ export class BookingsRepository {
     tenantId: string;
     startTime: Date;
     endTime: Date;
+    status?: BookingStatus;
   }) {
     return prisma.amenityBooking.create({
-      data,
+      data: {
+        ...data
+      }
     });
   }
 
   async update(id: string, status: BookingStatus, additionalData: Partial<{ actualCheckInAt: Date | null; actualCheckOutAt: Date | null; checkedInBy: string | null; checkedOutBy: string | null }> = {}) {
-    return prisma.amenityBooking.update({
+    // Destructure fields that are not in the Prisma schema to avoid crashing
+    const { checkedInBy, checkedOutBy, ...prismaData } = additionalData;
+    
+    console.log(`[BookingRepo] Updating booking ${id} to status ${status}`);
+    console.log(`[BookingRepo] Prisma payload:`, prismaData);
+
+    const updated = await prisma.amenityBooking.update({
       where: { id },
       data: {
         status,
-        ...additionalData,
-      },
+        ...prismaData
+      }
     });
+    
+    console.log(`[BookingRepo] Successfully updated booking ${id}. New status: ${updated.status}`);
+    return updated;
   }
 
   async findById(id: string) {
     return prisma.amenityBooking.findFirst({
       where: {
-        id,
-        deletedAt: null,
-      },
+        id},
       include: {
         amenity: true,
         tenant: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
-    });
+          select: { id: true, firstName: true, lastName: true, email: true }}}});
   }
 
   /**
@@ -45,18 +52,16 @@ export class BookingsRepository {
     return prisma.amenityBooking.findFirst({
       where: {
         amenityId,
-        deletedAt: null,
-        status: { in: [BookingStatus.PENDING, BookingStatus.APPROVED] },
+
+        status: { in: [BookingStatus.APPROVED, BookingStatus.IN_USE] },
         id: excludeBookingId ? { not: excludeBookingId } : undefined,
         // Mathematical overlap condition: (StartA < EndB) AND (EndA > StartB)
         startTime: { lt: endTime },
-        endTime: { gt: startTime },
-      },
-    });
+        endTime: { gt: startTime }}});
   }
 
   async findAll(options: { skip?: number; take?: number; tenantId?: string; amenityId?: string; status?: BookingStatus }) {
-    const where: any = { deletedAt: null };
+    const where: any = { };
 
     if (options.tenantId) where.tenantId = options.tenantId;
     if (options.amenityId) where.amenityId = options.amenityId;
@@ -69,9 +74,7 @@ export class BookingsRepository {
       orderBy: { startTime: 'asc' },
       include: {
         amenity: { select: { id: true, name: true, propertyId: true } },
-        tenant: { select: { id: true, firstName: true, lastName: true } },
-      },
-    });
+        tenant: { select: { id: true, firstName: true, lastName: true } }}});
   }
 }
 

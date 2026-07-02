@@ -4,14 +4,14 @@ import LandingPage from './components/LandingPage.tsx';
 import LoginPage from './components/LoginPage.tsx';
 import Sidebar from './components/Sidebar.tsx';
 import Header from './components/Header.tsx';
-import DashboardView from './components/DashboardView.tsx';
-import PropertyView from './components/PropertyView.tsx';
-import MaintenanceView from './components/MaintenanceView.tsx';
-import AmenityView from './components/AmenityView.tsx';
-import AnalyticsView from './components/AnalyticsView.tsx';
-import AdminView from './components/AdminView.tsx';
-import UserProfileView from './components/UserProfileView.tsx';
-import RealTimeMonitorView from './components/RealTimeMonitorView.tsx';
+const DashboardView = React.lazy(() => import('./components/DashboardView.tsx'));
+const PropertyView = React.lazy(() => import('./components/PropertyView.tsx'));
+const MaintenanceView = React.lazy(() => import('./components/MaintenanceView.tsx'));
+const AmenityView = React.lazy(() => import('./components/AmenityView.tsx'));
+const AnalyticsView = React.lazy(() => import('./components/AnalyticsView.tsx'));
+const AdminView = React.lazy(() => import('./components/AdminView.tsx'));
+const UserProfileView = React.lazy(() => import('./components/UserProfileView.tsx'));
+const RealTimeMonitorView = React.lazy(() => import('./components/RealTimeMonitorView.tsx'));
 import { ErrorBoundary, SafeguardState } from './components/DesignSystem.tsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
@@ -25,58 +25,28 @@ import {
   useCreateBooking,
   useCancelBooking,
   useCheckInBooking,
-  useCheckOutBooking
+  useCheckOutBooking,
+  useUpdateBooking,
+  useAmenities
 } from './api/hooks';
 import { AuthService } from './api/services';
+import { bookingValidationSchema } from '../shared/zod';
 
 export default function App() {
   const [view, setView] = useState<'landing' | 'login' | 'dashboard' | 'properties' | 'maintenance' | 'amenities' | 'analytics' | 'admin' | 'profile' | 'monitor'>('landing');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [simulationState, setSimulationState] = useState<'normal' | 'network' | 'unauthorized' | 'session'>('normal');
 
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
-    const saved = localStorage.getItem('propertyflow-theme');
-    return (saved as 'light' | 'dark' | 'system') || 'system';
-  });
+  const theme = 'dark';
 
-  const [notifications, setNotifications] = useState<AppNotification[]>([
-    {
-      id: 'notif-1',
-      title: 'Critical Boiler Pressure Alert',
-      description: 'Summit Heights basement boiler pressure breached safety threshold of 4.5 PSI. Assigned to emergency plumbing queue.',
-      category: 'sla',
-      priority: 'critical',
-      time: '12m ago',
-      read: false,
-      dateGroup: 'Today'
-    },
-    {
-      id: 'notif-2',
-      title: 'Active Dispatch Automated SLA Lock',
-      description: 'Contractor Dave Miller allocated to HVAC system compressor failure in Unit 402 under Tier-1 agreement.',
-      category: 'maintenance',
-      priority: 'high',
-      time: '1h ago',
-      read: false,
-      dateGroup: 'Today'
-    },
-    {
-      id: 'notif-3',
-      title: 'Tenant Amenity Slot Reserved',
-      description: 'Sarah Connor confirmed shared Skyline Pool access window for June 9: 10:00 - 11:30.',
-      category: 'booking',
-      priority: 'low',
-      time: '2h ago',
-      read: true,
-      dateGroup: 'Today'
-    }
-  ]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // React Query Queries
   const { data: propertiesData, isLoading: propertiesLoading } = useProperties();
   const { data: maintenanceData, isLoading: maintenanceLoading } = useMaintenanceRequests();
   const { data: bookingsData, isLoading: bookingsLoading } = useBookings();
   const { data: usersData } = useUsers();
+  const { data: amenitiesData, isLoading: amenitiesLoading } = useAmenities();
 
   const properties = (propertiesData?.properties || []).map((p: any) => ({
     id: p.id,
@@ -106,33 +76,22 @@ export default function App() {
       title: req.title,
       description: req.description,
       propertyId: req.propertyId,
-      propertyName: req.propertyName || undefined,
+      propertyName: req.property ? req.property.name : undefined,
       unitNumber: req.unitNumber || 'Suite 402',
       priority,
       status,
-      createdBy: req.tenantName || 'Sarah Connor',
+      createdBy: req.tenant ? `${req.tenant.firstName} ${req.tenant.lastName}` : 'System',
+      createdById: req.tenantId,
       createdAt: req.createdAt,
-      assignedTo: req.assignedTechnicianName || undefined,
+      assignedTo: req.technician ? `${req.technician.firstName} ${req.technician.lastName}` : undefined,
       category: req.category || 'General',
+      rating: req.rating ?? undefined,
+      reviewComment: req.reviewComment ?? undefined,
+      ratedAt: req.ratedAt ?? undefined,
     } as MaintenanceRequest;
   });
 
-  const bookings = (bookingsData || []).map((b: any) => {
-    const startStr = b.startTime ? new Date(b.startTime).toISOString().split('T')[1].substring(0, 5) : '10:00';
-    const endStr = b.endTime ? new Date(b.endTime).toISOString().split('T')[1].substring(0, 5) : '11:30';
-
-    return {
-      id: b.id,
-      amenityName: b.amenityName || 'Skyline Pool',
-      propertyId: b.propertyId || 'prop-1111-1111-1111-111111111111',
-      user: b.user || 'Sarah Connor',
-      start: startStr,
-      end: endStr,
-      status: b.status === 'APPROVED' ? 'booked' : b.status === 'IN_USE' ? 'IN_USE' : b.status === 'COMPLETED' ? 'COMPLETED' : 'cancelled',
-      actualCheckInAt: b.actualCheckInAt || null,
-      actualCheckOutAt: b.actualCheckOutAt || null,
-    } as BookingSlot;
-  });
+  const bookings: BookingSlot[] = bookingsData || [];
 
   const users = (usersData?.users || []).map((u: any) => {
     let role: 'Admin' | 'Manager' | 'Staff' | 'Tenant' = 'Tenant';
@@ -149,7 +108,7 @@ export default function App() {
     } as User;
   });
 
-  const amenities = ['Skyline Pool', 'Fitness Center', 'Penthouse Lounge', 'Garden Lounge', 'Tennis Courts'];
+  const amenities = Array.from(new Set((amenitiesData?.amenities || []).map((a: any) => a.name)));
 
   const setUsers = () => {};
   const setProperties = () => {};
@@ -163,6 +122,7 @@ export default function App() {
   const assignTicketMutation = useAssignMaintenanceRequest();
 
   const createBookingMutation = useCreateBooking();
+  const updateBookingMutation = useUpdateBooking();
   const cancelBookingMutation = useCancelBooking();
   const checkInBookingMutation = useCheckInBooking();
   const checkOutBookingMutation = useCheckOutBooking();
@@ -197,34 +157,30 @@ export default function App() {
           setCurrentUser(null);
           setView('landing');
         });
+    } else {
+      setView('landing');
     }
   }, []);
 
-  // Theme support
+  // Listen to global auth logout event (triggered by Axios refresh failures)
+  useEffect(() => {
+    const handleGlobalLogout = () => {
+      setCurrentUser(null);
+      setView('landing');
+    };
+    window.addEventListener('auth:logout', handleGlobalLogout);
+    return () => {
+      window.removeEventListener('auth:logout', handleGlobalLogout);
+    };
+  }, []);
+
+  // Theme support (locked to dark mode)
   useEffect(() => {
     const root = window.document.documentElement;
-    const applyTheme = () => {
-      root.classList.remove('light', 'dark');
-      if (theme === 'system') {
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        root.classList.add(systemTheme);
-      } else {
-        root.classList.add(theme);
-      }
-    };
-
-    applyTheme();
-    localStorage.setItem('propertyflow-theme', theme);
-
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleMediaChange = () => {
-        applyTheme();
-      };
-      mediaQuery.addEventListener('change', handleMediaChange);
-      return () => mediaQuery.removeEventListener('change', handleMediaChange);
-    }
-  }, [theme]);
+    root.classList.remove('light');
+    root.classList.add('dark');
+    localStorage.setItem('propertyflow-theme', 'dark');
+  }, []);
 
   // Real-time updates invalidation via WebSockets
   const queryClient = useQueryClient();
@@ -273,7 +229,7 @@ export default function App() {
       console.error('Logout request failed:', err);
     }
     setCurrentUser(null);
-    setView('landing');
+    setView('login');
     import('./api/socket').then(({ socket }) => {
       socket.disconnect();
     });
@@ -316,32 +272,97 @@ export default function App() {
     updateTicketStatusMutation.mutate({ id, status: dbStatus as any });
   };
 
-  const handleCreateBooking = (booking: Omit<BookingSlot, 'id' | 'status'>) => {
-    const propObj = propertiesData?.properties?.find(p => p.id === booking.propertyId);
+  const handleCreateBooking = (booking: Omit<BookingSlot, 'id' | 'status'>, callbacks?: { onSuccess?: () => void, onError?: (err: any) => void }) => {
+    const propObj = propertiesData?.properties?.find((p: any) => p.id === booking.propertyId);
     const amenityObj = propObj?.amenities?.find((am: any) => am.name === booking.amenityName);
     
     if (!amenityObj) {
-      alert('Error: Specified amenity does not exist on property.');
+      if (callbacks?.onError) callbacks.onError(new Error('Specified amenity does not exist on property.'));
       return;
     }
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const selectedDateStr = booking.date;
 
-    const startTime = new Date(`${tomorrowStr}T${booking.start}:00Z`).toISOString();
-    const endTime = new Date(`${tomorrowStr}T${booking.end}:00Z`).toISOString();
+    const startTime = new Date(`${selectedDateStr}T${booking.start}:00`).toISOString();
+    const endTime = new Date(`${selectedDateStr}T${booking.end}:00`).toISOString();
 
-    createBookingMutation.mutate({
+    const payload = {
       amenityId: amenityObj.id,
       tenantId: currentUser?.id || 'd4444444-4444-4444-4444-444444444444',
       startTime,
       endTime,
+    };
+
+    try {
+      bookingValidationSchema.parse(payload);
+    } catch (err: any) {
+      if (err.errors) {
+        if (callbacks?.onError) callbacks.onError(new Error('Validation Error: ' + err.errors[0].message));
+        return;
+      }
+    }
+
+    createBookingMutation.mutate(payload, {
+      onSuccess: () => {
+        if (callbacks?.onSuccess) callbacks.onSuccess();
+      },
+      onError: (error: any) => {
+        if (callbacks?.onError) {
+          const message = error.response?.data?.message || 'This time slot has already been booked. Please choose another available slot.';
+          callbacks.onError(new Error(message));
+        } else {
+          alert('This time slot has already been booked. Please choose another available slot.');
+        }
+      }
     });
   };
 
   const handleCancelBooking = (id: string) => {
     cancelBookingMutation.mutate(id);
+  };
+
+  const handleUpdateBooking = (id: string, updatedBooking: Omit<BookingSlot, 'id' | 'status'>, callbacks?: { onSuccess?: () => void, onError?: (err: any) => void }) => {
+    const propObj = propertiesData?.properties?.find((p: any) => p.id === updatedBooking.propertyId);
+    const amenityObj = propObj?.amenities?.find((am: any) => am.name === updatedBooking.amenityName);
+    
+    if (!amenityObj) {
+      if (callbacks?.onError) callbacks.onError(new Error('Specified amenity does not exist on property.'));
+      return;
+    }
+
+    const selectedDateStr = updatedBooking.date;
+    const startTime = new Date(`${selectedDateStr}T${updatedBooking.start}:00`).toISOString();
+    const endTime = new Date(`${selectedDateStr}T${updatedBooking.end}:00`).toISOString();
+
+    const payload = {
+      amenityId: amenityObj.id,
+      tenantId: currentUser?.id || 'd4444444-4444-4444-4444-444444444444',
+      startTime,
+      endTime,
+    };
+
+    try {
+      bookingValidationSchema.parse(payload);
+    } catch (err: any) {
+      if (err.errors) {
+        if (callbacks?.onError) callbacks.onError(new Error('Validation Error: ' + err.errors[0].message));
+        return;
+      }
+    }
+
+    updateBookingMutation.mutate({ id, data: payload }, {
+      onSuccess: () => {
+        if (callbacks?.onSuccess) callbacks.onSuccess();
+      },
+      onError: (error: any) => {
+        if (callbacks?.onError) {
+          const message = error.response?.data?.message || 'Failed to update booking.';
+          callbacks.onError(new Error(message));
+        } else {
+          alert('Failed to update booking.');
+        }
+      }
+    });
   };
 
   const handleCheckInBooking = (id: string) => {
@@ -379,12 +400,7 @@ export default function App() {
       return (
         <LandingPage 
           onLoginClick={() => setView('login')} 
-          onGetStarted={() => {
-            // Log in as manager by default for easy experience
-            handleLogin(users[1]);
-          }} 
-          theme={theme}
-          setTheme={setTheme}
+          onGetStarted={() => setView('login')} 
         />
       );
     }
@@ -403,11 +419,17 @@ export default function App() {
           />
         );
       case 'properties':
+        if (currentUser.role !== 'Admin') {
+          return <div className="p-8 text-center text-rose-500 font-bold">Access Denied: You do not have permissions to view the Property Index.</div>;
+        }
         return (
           <PropertyView 
             properties={properties}
             setProperties={setProperties}
             currentUser={currentUser}
+            maintenance={maintenance}
+            bookings={bookings}
+            isLoading={propertiesLoading}
           />
         );
       case 'maintenance':
@@ -428,9 +450,12 @@ export default function App() {
             properties={properties}
             bookings={bookings}
             onCreateBooking={handleCreateBooking}
+            onUpdateBooking={handleUpdateBooking}
             onCancelBooking={handleCancelBooking}
             onCheckInBooking={handleCheckInBooking}
             onCheckOutBooking={handleCheckOutBooking}
+            amenities={amenities}
+            isLoading={amenitiesLoading}
           />
         );
       case 'analytics':
@@ -492,18 +517,24 @@ export default function App() {
     }
   };
 
-  if (view === 'landing' && !currentUser) {
+  // Global Route Protection
+  if (!currentUser && view !== 'landing' && view !== 'login') {
+    setView('login');
+    return null; // Don't render layout until state updates
+  }
+
+  if (view === 'landing') {
     return (
       <LandingPage 
         onLoginClick={() => setView('login')} 
-        onGetStarted={() => handleLogin(users[1])} // Default login with Manager Brody
-        theme={theme}
-        setTheme={setTheme}
+        onGetStarted={() => setView('dashboard')}
+        onLogout={handleLogout}
+        currentUser={currentUser}
       />
     );
   }
 
-  if (view === 'login' && !currentUser) {
+  if (view === 'login') {
     return (
       <LoginPage 
         users={users} 
@@ -537,8 +568,6 @@ export default function App() {
           onMarkAsRead={handleMarkNotificationRead}
           onMarkAllAsRead={handleMarkAllNotificationsRead}
           onClearNotifications={handleClearNotifications}
-          theme={theme}
-          onThemeChange={setTheme}
         />
 
         {/* Dynamic View Scroll Area shielded by ErrorBoundary & Safeguard simulations */}
@@ -550,7 +579,13 @@ export default function App() {
                 onReset={() => setSimulationState('normal')} 
               />
             ) : (
-              renderContent()
+              <React.Suspense fallback={
+                <div className="flex items-center justify-center h-full min-h-[400px]">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-teal"></div>
+                </div>
+              }>
+                {renderContent()}
+              </React.Suspense>
             )}
           </ErrorBoundary>
         </main>

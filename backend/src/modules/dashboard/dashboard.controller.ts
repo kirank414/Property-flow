@@ -9,8 +9,7 @@ export class DashboardController {
       const kpis = await dashboardService.getKPIs();
       res.status(200).json({
         status: 'success',
-        data: kpis,
-      });
+        data: kpis});
     } catch (error) {
       next(error);
     }

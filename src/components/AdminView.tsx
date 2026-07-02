@@ -28,6 +28,7 @@ import {
   useDeleteAmenity,
   useAuditLogs
 } from '../api/hooks';
+import { resizeAndCompressImage } from '../utils/image';
 
 interface AdminViewProps {
   currentUser: User;
@@ -59,7 +60,6 @@ export default function AdminView({
   const [activeTab, setActiveTab] = useState<'users' | 'properties' | 'amenities' | 'logs'>('users');
 
   // Queries
-  const { data: usersData } = useUsers();
   const { data: propertiesData } = useProperties();
   const { data: amenitiesData } = useAmenities();
   const { data: logsData } = useAuditLogs();
@@ -78,36 +78,9 @@ export default function AdminView({
   const deleteAmenityMutation = useDeleteAmenity();
 
   // Mapped Lists for UI
-  const users = (usersData?.users || []).map((u: any) => {
-    let role: 'Admin' | 'Manager' | 'Staff' | 'Tenant' = 'Tenant';
-    if (u.role === 'ADMIN') role = 'Admin';
-    else if (u.role === 'MANAGER') role = 'Manager';
-    else if (u.role === 'STAFF') role = 'Staff';
-    return {
-      id: u.id,
-      email: u.email,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      name: `${u.firstName} ${u.lastName}`,
-      role,
-      propertyId: u.propertyId || undefined,
-      avatarUrl: u.avatarUrl || undefined,
-    } as User;
-  });
-
-  const properties = (propertiesData?.properties || []).map((p: any) => ({
-    id: p.id,
-    name: p.name,
-    address: p.address,
-    type: p.type,
-    units: p.units,
-    occupancy: p.occupancyRate,
-    image: p.imageUrl || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&auto=format&fit=crop&q=80',
-    manager: p.owner ? `${p.owner.firstName} ${p.owner.lastName}` : 'Unassigned',
-    amenities: p.amenities ? p.amenities.map((am: any) => am.name) : [],
-  } as Property));
-
-  const amenities = (amenitiesData?.amenities || []).map((am: any) => am.name);
+  const users = propUsers;
+  const properties = propProperties;
+  const amenities = propAmenities;
   const logsList = logsData?.logs || [];
 
   // Modal States
@@ -125,6 +98,7 @@ export default function AdminView({
   const [propType, setPropType] = useState('Residential');
   const [propUnits, setPropUnits] = useState(60);
   const [propOccupancy, setPropOccupancy] = useState(90);
+  const [propImage, setPropImage] = useState('');
 
   const [showAmenityModal, setShowAmenityModal] = useState(false);
   const [editingAmenity, setEditingAmenity] = useState<string | null>(null);
@@ -201,6 +175,7 @@ export default function AdminView({
     setPropType('Residential');
     setPropUnits(60);
     setPropOccupancy(90);
+    setPropImage('');
     setShowPropertyModal(true);
   };
 
@@ -211,6 +186,7 @@ export default function AdminView({
     setPropType(prop.type);
     setPropUnits(prop.units);
     setPropOccupancy(prop.occupancy);
+    setPropImage(prop.image || '');
     setShowPropertyModal(true);
   };
 
@@ -227,24 +203,51 @@ export default function AdminView({
           type: propType,
           units: Number(propUnits),
           occupancyRate: Number(propOccupancy),
+          imageUrl: propImage || null,
+        }
+      }, {
+        onSuccess: () => {
+          setShowPropertyModal(false);
+          setPropImage('');
+        },
+        onError: (err: any) => {
+          alert(err.response?.data?.message || err.message || 'Failed to update property details.');
         }
       });
     } else {
+      const managerUser = users.find(u => u.role === 'Manager') || currentUser;
       createPropertyMutation.mutate({
         name: propName,
         address: propAddress,
         type: propType,
         units: Number(propUnits),
         occupancyRate: Number(propOccupancy),
-        ownerId: 'b2222222-2222-2222-2222-222222222222', // Seeded Manager Brody ID
+        ownerId: managerUser.id,
         status: 'ACTIVE',
+        imageUrl: propImage || null,
+      }, {
+        onSuccess: () => {
+          setShowPropertyModal(false);
+          setPropImage('');
+        },
+        onError: (err: any) => {
+          alert(err.response?.data?.message || err.message || 'Failed to create property.');
+        }
       });
     }
-    setShowPropertyModal(false);
   };
 
   const handleDeleteProperty = (id: string, name: string) => {
-    deletePropertyMutation.mutate(id);
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      deletePropertyMutation.mutate(id, {
+        onSuccess: () => {
+          alert(`Property "${name}" deleted successfully.`);
+        },
+        onError: (err: any) => {
+          alert(err.response?.data?.message || err.message || 'Failed to delete property.');
+        }
+      });
+    }
   };
 
   // Amenity CRUD handlers
@@ -294,13 +297,9 @@ export default function AdminView({
       {/* Header */}
       <div className="border-b border-brand-border pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-title tracking-tight font-sans">System Administration Workspace</h1>
-          <p className="text-sm text-brand-body font-light mt-0.5">Control credential roles, manage complexes, amenities, and verify operational audit logs.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-title tracking-tight font-sans">System Administration</h1>
+          <p className="text-sm text-brand-body font-light mt-0.5">Manage users, properties, amenities, and monitor platform activities.</p>
         </div>
-
-        <span className="text-[10px] text-primary-teal font-bold bg-primary-teal/10 border border-primary-teal/20 px-2.5 py-0.5 rounded uppercase font-mono">
-          Global access
-        </span>
       </div>
 
       {/* Admin Tab Controls */}
@@ -310,28 +309,28 @@ export default function AdminView({
           className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 cursor-pointer leading-none min-h-[38px] ${activeTab === 'users' ? 'border-primary-teal text-primary-teal' : 'border-transparent text-brand-body'}`}
         >
           <Users className="w-4 h-4" />
-          <span>User Profiles & Roles</span>
+          <span>Users</span>
         </button>
         <button
           onClick={() => setActiveTab('properties')}
           className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 cursor-pointer leading-none min-h-[38px] ${activeTab === 'properties' ? 'border-primary-teal text-primary-teal' : 'border-transparent text-brand-body'}`}
         >
           <Building className="w-4 h-4" />
-          <span>Property Complexes</span>
+          <span>Properties</span>
         </button>
         <button
           onClick={() => setActiveTab('amenities')}
           className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 cursor-pointer leading-none min-h-[38px] ${activeTab === 'amenities' ? 'border-primary-teal text-primary-teal' : 'border-transparent text-brand-body'}`}
         >
           <Calendar className="w-4 h-4" />
-          <span>Facility Amenities</span>
+          <span>Amenities</span>
         </button>
         <button
           onClick={() => setActiveTab('logs')}
           className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 cursor-pointer leading-none min-h-[38px] ${activeTab === 'logs' ? 'border-primary-teal text-primary-teal' : 'border-transparent text-brand-body'}`}
         >
           <FileText className="w-4 h-4" />
-          <span>Operational Audit Trail</span>
+          <span>Activity Log</span>
         </button>
       </div>
 
@@ -341,6 +340,26 @@ export default function AdminView({
         {/* 1. USER PROFILES MANAGEMENT */}
         {activeTab === 'users' && (
           <div className="space-y-4">
+            {/* KPI Summary Row */}
+            <div className="grid grid-cols-4 gap-4 mb-2">
+              <div className="bg-brand-alternate rounded-xl p-3 border border-brand-border flex flex-col justify-center text-center">
+                <span className="text-[10px] text-brand-muted uppercase font-bold">Total Users</span>
+                <span className="text-lg font-extrabold text-brand-title">{users.length}</span>
+              </div>
+              <div className="bg-brand-alternate rounded-xl p-3 border border-brand-border flex flex-col justify-center text-center">
+                <span className="text-[10px] text-brand-muted uppercase font-bold">System Admins</span>
+                <span className="text-lg font-extrabold text-brand-title">{users.filter(u => u.role === 'Admin').length}</span>
+              </div>
+              <div className="bg-brand-alternate rounded-xl p-3 border border-brand-border flex flex-col justify-center text-center">
+                <span className="text-[10px] text-brand-muted uppercase font-bold">Property Managers</span>
+                <span className="text-lg font-extrabold text-brand-title">{users.filter(u => u.role === 'Manager').length}</span>
+              </div>
+              <div className="bg-brand-alternate rounded-xl p-3 border border-brand-border flex flex-col justify-center text-center">
+                <span className="text-[10px] text-brand-muted uppercase font-bold">Tenants</span>
+                <span className="text-lg font-extrabold text-brand-title">{users.filter(u => u.role === 'Tenant').length}</span>
+              </div>
+            </div>
+
             <div className="flex justify-between items-center">
               <h3 className="text-sm font-extrabold text-brand-title">Active Platform Users</h3>
               <button
@@ -348,7 +367,7 @@ export default function AdminView({
                 className="bg-primary-teal hover:bg-primary-teal-hover text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center space-x-1 cursor-pointer min-h-[36px]"
               >
                 <Plus className="w-4 h-4" />
-                <span>Add User Profile</span>
+                <span>Add User</span>
               </button>
             </div>
 
@@ -356,10 +375,10 @@ export default function AdminView({
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-brand-alternate border-b border-brand-border text-brand-muted uppercase text-[9px] font-mono font-bold">
-                    <th className="p-3">User Profile</th>
-                    <th className="p-3">Security Email</th>
-                    <th className="p-3">Clearance Role</th>
-                    <th className="p-3">Assigned Complex</th>
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Email Address</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3">Assigned Property</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -369,16 +388,18 @@ export default function AdminView({
                       <td className="p-3 font-semibold text-brand-title">{u.name}</td>
                       <td className="p-3 font-mono">{u.email}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ${
                           u.role === 'Admin' ? 'bg-slate-900 text-white dark:bg-slate-800' :
                           u.role === 'Manager' ? 'bg-primary-teal/15 text-primary-teal' :
                           u.role === 'Staff' ? 'bg-amber-500/10 text-amber-500' : 'bg-brand-alternate text-brand-body'
                         }`}>
-                          {u.role.toUpperCase()}
+                          {u.role === 'Admin' ? 'SYSTEM ADMIN' : 
+                           u.role === 'Manager' ? 'PROPERTY MANAGER' : 
+                           u.role === 'Staff' ? 'SUPPORT STAFF' : 'TENANT'}
                         </span>
                       </td>
                       <td className="p-3 text-brand-muted">
-                        {u.role === 'Tenant' && u.propertyId ? properties.find(p => p.id === u.propertyId)?.name || 'Property' : '-'}
+                        {u.propertyId ? properties.find(p => p.id === u.propertyId)?.name || '-' : '-'}
                       </td>
                       <td className="p-3 text-right space-x-2">
                         <button onClick={() => openUserEdit(u)} className="p-1 hover:text-primary-teal" title="Edit user profile"><Edit2 className="w-4 h-4 inline" /></button>
@@ -478,26 +499,40 @@ export default function AdminView({
           </div>
         )}
 
-        {/* 4. OPERATIONAL AUDIT TRAIL */}
+        {/* 4. ACTIVITY LOG */}
         {activeTab === 'logs' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center border-b border-brand-border pb-2">
               <h3 className="text-sm font-extrabold text-brand-title flex items-center space-x-1.5">
                 <Activity className="w-4 h-4 text-primary-teal" />
-                <span>Operational Activity Log</span>
+                <span>Activity Log</span>
               </h3>
             </div>
 
             <div className="bg-[#0f172a] text-emerald-400 font-mono text-[11px] p-4 rounded-xl space-y-1.5 h-64 overflow-y-auto">
-              {logsList.length > 0 ? (
-                logsList.map((log: any, idx) => (
-                  <div key={idx} className="select-text truncate">
-                    [{log.createdAt ? log.createdAt.replace('T', ' ').substring(0, 19) : ''}] User: {log.userName || 'System'} performed {log.action} on {log.entity} (ID: {log.entityId?.substring(0, 8)}) {log.details ? `- ${log.details}` : ''}
-                  </div>
-                ))
-              ) : (
-                <div className="text-slate-500 text-center py-20 font-sans">No operational logs logged.</div>
-              )}
+              {(() => {
+                const allowedEvents = [
+                  'USER CREATED', 'USER UPDATED', 'USER DELETED',
+                  'PROPERTY ADDED', 'PROPERTY CREATED', 'PROPERTY UPDATED', 'AMENITY ADDED', 'AMENITY CREATED',
+                  'MAINTENANCE STATUS UPDATED', 'BOOKING CREATED', 'BOOKING CANCELLED'
+                ];
+                const filteredLogs = logsList.filter((log: any) => {
+                  const eventStr = `${log.entity} ${log.action}`.toUpperCase();
+                  return allowedEvents.some(ae => eventStr.includes(ae) || (log.details && log.details.toUpperCase().includes(ae)));
+                });
+                return filteredLogs.length > 0 ? (
+                  filteredLogs.map((log: any, idx: number) => {
+                    const actionName = `${log.entity} ${log.action}`.toUpperCase();
+                    return (
+                      <div key={idx} className="select-text truncate">
+                        [{log.createdAt ? log.createdAt.replace('T', ' ').substring(0, 19) : ''}] {actionName} - {log.details ? log.details : `ID: ${log.entityId?.substring(0, 8)}`} (by {log.userName || 'System'})
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-slate-500 text-center py-20 font-sans">No platform events logged.</div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -651,9 +686,69 @@ export default function AdminView({
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-brand-body uppercase block">Property Photo</label>
+                <div className="flex items-center space-x-3 p-2 bg-brand-alternate border border-brand-border rounded-xl">
+                  {propImage ? (
+                    <img 
+                      src={propImage} 
+                      alt="Property Preview" 
+                      className="w-12 h-12 rounded-lg object-cover border border-brand-border" 
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg border border-dashed border-brand-border bg-brand-alternate/50 flex items-center justify-center text-brand-muted text-[10px] select-none text-center">
+                      No Photo
+                    </div>
+                  )}
+                  <div className="flex flex-col space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('admin-prop-file-input')?.click()}
+                      className="px-2.5 py-1.5 bg-brand-surface hover:bg-brand-alternate text-brand-title border border-brand-border rounded-lg text-[10px] font-semibold cursor-pointer focus:outline-none transition-colors"
+                    >
+                      Choose Local File
+                    </button>
+                    {propImage && (
+                      <button
+                        type="button"
+                        onClick={() => setPropImage('')}
+                        className="text-[9px] text-left text-rose-500 hover:text-rose-600 font-semibold underline cursor-pointer focus:outline-none bg-transparent border-0 p-0"
+                      >
+                        Remove Image
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  id="admin-prop-file-input"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const base64String = await resizeAndCompressImage(file);
+                        setPropImage(base64String);
+                      } catch (err: any) {
+                        alert(err.message || 'Failed to process property photo.');
+                      }
+                    }
+                  }}
+                  className="hidden"
+                />
+              </div>
+
               <div className="flex justify-end space-x-2 pt-2 border-t border-brand-border">
                 <button type="button" onClick={() => setShowPropertyModal(false)} className="px-3 py-2 bg-brand-alternate rounded-xl font-semibold">Discard</button>
-                <button type="submit" className="px-4 py-2 bg-primary-teal text-white rounded-xl font-semibold">Save Property Details</button>
+                <button
+                  type="submit"
+                  disabled={createPropertyMutation.isPending || updatePropertyMutation.isPending}
+                  className="px-4 py-2 bg-primary-teal text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {createPropertyMutation.isPending || updatePropertyMutation.isPending
+                    ? 'Saving...'
+                    : 'Save Property Details'}
+                </button>
               </div>
             </form>
           </div>

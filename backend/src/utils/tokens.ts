@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { jwtKeys, env } from '../config/env';
 
 export interface AccessTokenPayload {
-  id: string;
+  id: string; role?: string;
 }
 
 export class TokenService {

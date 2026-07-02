@@ -27,11 +27,9 @@ export class AuthController {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            phone: user.phone,
-          },
-          accessToken: tokens.accessToken,
-        },
-      });
+            role: user.role,
+            propertyId: user.propertyId},
+          accessToken: tokens.accessToken}});
     } catch (error) {
       next(error);
     }
@@ -52,11 +50,9 @@ export class AuthController {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            phone: user.phone,
-          },
-          accessToken: tokens.accessToken,
-        },
-      });
+            role: user.role,
+            propertyId: user.propertyId},
+          accessToken: tokens.accessToken}});
     } catch (error) {
       next(error);
     }
@@ -74,9 +70,7 @@ export class AuthController {
       res.status(200).json({
         status: 'success',
         data: {
-          accessToken: tokens.accessToken,
-        },
-      });
+          accessToken: tokens.accessToken}});
     } catch (error) {
       next(error);
     }
@@ -92,13 +86,11 @@ export class AuthController {
       res.clearCookie(COOKIE_NAME, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-      });
+        sameSite: 'lax'});
 
       res.status(200).json({
         status: 'success',
-        message: 'Successfully logged out.',
-      });
+        message: 'Success' });
     } catch (error) {
       next(error);
     }
@@ -109,7 +101,7 @@ export class AuthController {
       await authService.forgotPassword(req.body.email);
       res.status(200).json({
         status: 'success',
-        message: 'If the email matches an active account, a password recovery link has been generated.',
+        message: 'Success'
       });
     } catch (error) {
       next(error);
@@ -122,8 +114,7 @@ export class AuthController {
       await authService.resetPassword(token, newPassword);
       res.status(200).json({
         status: 'success',
-        message: 'Password successfully updated. You can now login with your new credentials.',
-      });
+        message: 'Success' });
     } catch (error) {
       next(error);
     }
@@ -133,16 +124,14 @@ export class AuthController {
     try {
       const userId = req.user?.id;
       if (!userId) {
-        res.status(401).json({ status: 'fail', message: 'Unauthorized: No active session.' });
+        res.status(401).json({ status: 'fail', message: 'Success' });
         return;
       }
       const user = await authService.getCurrentUser(userId);
       res.status(200).json({
         status: 'success',
         data: {
-          user,
-        },
-      });
+          user}});
     } catch (error) {
       next(error);
     }

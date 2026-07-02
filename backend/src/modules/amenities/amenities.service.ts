@@ -28,8 +28,7 @@ export class AmenitiesService {
       rules: parsedRules,
       operatingHours: amenity.operatingHours || null,
       status: amenity.status,
-      activeBookingsCount: amenity.bookings ? amenity.bookings.length : 0,
-    };
+      activeBookingsCount: amenity.bookings ? amenity.bookings.length : 0};
   }
 
   async createAmenity(
@@ -48,16 +47,14 @@ export class AmenitiesService {
   ) {
     // Verify property exists
     const property = await prisma.property.findFirst({
-      where: { id: data.propertyId, deletedAt: null },
-    });
+      where: { id: data.propertyId }});
     if (!property) {
       throw new AppError('The specified property ID does not exist.', 400);
     }
 
     const payload = {
       ...data,
-      rules: JSON.stringify(data.rules || []),
-    };
+      rules: JSON.stringify(data.rules || [])};
 
     const amenity = await this.repo.create(payload);
     await logAudit({
@@ -65,8 +62,7 @@ export class AmenitiesService {
       action: 'CREATE',
       entity: 'Amenity',
       entityId: amenity.id,
-      details: JSON.stringify(data),
-    });
+      details: JSON.stringify(data)});
 
     const created = await this.repo.findById(amenity.id);
     return this.mapAmenityToDTO(created);
@@ -94,8 +90,7 @@ export class AmenitiesService {
 
     if (data.propertyId) {
       const property = await prisma.property.findFirst({
-        where: { id: data.propertyId, deletedAt: null },
-      });
+        where: { id: data.propertyId }});
       if (!property) {
         throw new AppError('The specified property ID does not exist.', 400);
       }
@@ -112,8 +107,7 @@ export class AmenitiesService {
       action: 'UPDATE',
       entity: 'Amenity',
       entityId: id,
-      details: JSON.stringify(data),
-    });
+      details: JSON.stringify(data)});
 
     const updatedAmenity = await this.repo.findById(updated.id);
     return this.mapAmenityToDTO(updatedAmenity);
@@ -131,8 +125,7 @@ export class AmenitiesService {
       action: 'DELETE',
       entity: 'Amenity',
       entityId: id,
-      details: 'Soft deleted amenity',
-    });
+      details: 'Soft deleted amenity'});
 
     return deleted;
   }
@@ -154,13 +147,11 @@ export class AmenitiesService {
       skip,
       take: limit,
       search: filters.search,
-      propertyId: filters.propertyId,
-    });
+      propertyId: filters.propertyId});
 
     const total = await this.repo.count({
       search: filters.search,
-      propertyId: filters.propertyId,
-    });
+      propertyId: filters.propertyId});
 
     return {
       amenities: items.map((item) => this.mapAmenityToDTO(item)),
@@ -168,9 +159,7 @@ export class AmenitiesService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+        totalPages: Math.ceil(total / limit)}};
   }
 }
 

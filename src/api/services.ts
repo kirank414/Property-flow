@@ -106,6 +106,15 @@ export const MaintenanceService = {
     return res.data.data.request;
   },
 
+  async update(id: string, data: any): Promise<MaintenanceRequestDTO> {
+    const res = await apiClient.patch(`/maintenance/${id}`, data);
+    return res.data.data.request;
+  },
+
+  async delete(id: string): Promise<void> {
+    await apiClient.delete(`/maintenance/${id}`);
+  },
+
   async assign(id: string, technicianId: string): Promise<MaintenanceRequestDTO> {
     const res = await apiClient.patch(`/maintenance/${id}/assign`, { technicianId });
     return res.data.data.request;
@@ -125,6 +134,11 @@ export const MaintenanceService = {
     const res = await apiClient.get('/maintenance/sla');
     return res.data.data.metrics;
   },
+
+  async rate(id: string, rating: number, reviewComment?: string): Promise<MaintenanceRequestDTO> {
+    const res = await apiClient.patch(`/maintenance/${id}/rate`, { rating, reviewComment });
+    return res.data.data.request;
+  },
 };
 
 // ==========================================
@@ -138,6 +152,11 @@ export const BookingsService = {
 
   async create(data: any): Promise<AmenityBookingDTO> {
     const res = await apiClient.post('/bookings', data);
+    return res.data.data.booking;
+  },
+
+  async update(id: string, data: any): Promise<AmenityBookingDTO> {
+    const res = await apiClient.patch(`/bookings/${id}`, data);
     return res.data.data.booking;
   },
 

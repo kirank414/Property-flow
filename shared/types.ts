@@ -98,6 +98,9 @@ export interface MaintenanceRequestDTO {
   category: string;
   status: MaintenanceStatus;
   priority: MaintenancePriority;
+  rating?: number | null;
+  reviewComment?: string | null;
+  ratedAt?: string | null;
   resolvedAt?: string | null;
   createdAt: string;
   updatedAt: string;

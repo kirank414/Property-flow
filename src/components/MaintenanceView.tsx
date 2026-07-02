@@ -205,7 +205,9 @@ export default function MaintenanceView({
     const assignedUser = staffUsers[0]?.name || 'Unassigned Staff';
     
     // Status in UI is 'Pending', 'In Progress', 'Completed'
-    onUpdateTicketStatus(selectedRequest.id, status, assignedUser);
+    if (onUpdateTicketStatus) {
+      onUpdateTicketStatus(selectedRequest.id, status, assignedUser);
+    }
   };
 
   const handleRateRequest = () => {

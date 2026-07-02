@@ -7,17 +7,7 @@ export class AuthRepository {
   async findByEmail(email: string) {
     return prisma.user.findFirst({
       where: {
-        email,
-        deletedAt: null,
-      },
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
+        email}});
   }
 
   /**
@@ -26,10 +16,7 @@ export class AuthRepository {
   async findById(id: string) {
     return prisma.user.findFirst({
       where: {
-        id,
-        deletedAt: null,
-      },
-    });
+        id}});
   }
 
   /**
@@ -38,17 +25,7 @@ export class AuthRepository {
   async findByIdWithRelations(id: string) {
     return prisma.user.findFirst({
       where: {
-        id,
-        deletedAt: null,
-      },
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
+        id}});
   }
 
   /**
@@ -59,7 +36,7 @@ export class AuthRepository {
     passwordHash: string;
     firstName: string;
     lastName: string;
-    phone: string;
+    
   }) {
     const tenantRoleId = 'd0d0d0d0-c0c0-4d4d-8e8e-4f4f4f4f4f4f'; // Seeding UUID for Tenant
 
@@ -69,17 +46,9 @@ export class AuthRepository {
           email: data.email,
           passwordHash: data.passwordHash,
           firstName: data.firstName,
-          lastName: data.lastName,
-          phone: data.phone,
-        },
-      });
+          lastName: data.lastName}});
 
-      await tx.userRole.create({
-        data: {
-          userId: user.id,
-          roleId: tenantRoleId,
-        },
-      });
+      
 
       return user;
     });
@@ -91,8 +60,7 @@ export class AuthRepository {
   async updatePassword(userId: string, passwordHash: string) {
     return prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
-    });
+      data: { passwordHash }});
   }
 }
 

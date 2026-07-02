@@ -20,28 +20,17 @@ export class MaintenanceService {
   }) {
     // Validate property exists
     const propertyExists = await prisma.property.findFirst({
-      where: { id: data.propertyId, deletedAt: null },
-    });
+      where: { id: data.propertyId }});
     if (!propertyExists) {
       throw new AppError('The specified property does not exist.', 400);
     }
 
     return prisma.$transaction(async (tx) => {
       const request = await tx.maintenanceRequest.create({
-        data,
-      });
+        data});
 
       // Log initialization
-      await tx.maintenanceRequestHistory.create({
-        data: {
-          maintenanceRequestId: request.id,
-          newStatus: 'PENDING',
-          newPriority: data.priority,
-          actionType: 'system_action',
-          performedBy: data.tenantId,
-          notes: 'Maintenance ticket created.',
-        },
-      });
+      
 
       // Notify property managers about the new request
       // (For this mock, we fetch property owner and queue a notification to them)
@@ -49,8 +38,8 @@ export class MaintenanceService {
         userId: propertyExists.ownerId,
         title: 'New Maintenance Request Filed',
         message: `A new ticket has been filed for ${propertyExists.name}: "${data.title}"`,
-        type: 'MAINTENANCE',
-        channels: ['IN_APP', 'EMAIL'],
+        category: 'GENERAL',
+        priority: 'NORMAL'
       });
 
       // Broadcast dashboard cache invalidation globally
@@ -65,16 +54,14 @@ export class MaintenanceService {
    */
   async assignTechnician(requestId: string, technicianId: string, performerId: string) {
     const techUser = await prisma.user.findFirst({
-      where: { id: technicianId, deletedAt: null },
-    });
+      where: { id: technicianId }});
     if (!techUser) {
       throw new AppError('The assigned technician user ID does not exist.', 400);
     }
 
     return prisma.$transaction(async (tx) => {
       const request = await tx.maintenanceRequest.findUnique({
-        where: { id: requestId },
-      });
+        where: { id: requestId }});
       if (!request) {
         throw new AppError('Maintenance request not found.', 404);
       }
@@ -83,48 +70,34 @@ export class MaintenanceService {
         where: { id: requestId },
         data: {
           assignedTechnicianId: technicianId,
-          status: 'IN_PROGRESS',
-        },
-      });
+          status: 'IN_PROGRESS'}});
 
-      await tx.maintenanceRequestHistory.create({
-        data: {
-          maintenanceRequestId: requestId,
-          oldStatus: request.status,
-          newStatus: 'IN_PROGRESS',
-          oldTechnicianId: request.assignedTechnicianId,
-          newTechnicianId: technicianId,
-          actionType: 'technician_reassigned',
-          performedBy: performerId,
-          notes: 'Technician assigned to request.',
-        },
-      });
+      
 
       // Queue asynchronous notifications
       await notificationQueue.addNotification({
         userId: technicianId,
-        createdBy: performerId,
+        
         title: 'New Task Assignment',
         message: `You have been assigned to: "${request.title}"`,
-        type: 'MAINTENANCE',
-        channels: ['IN_APP', 'EMAIL'],
+        category: 'GENERAL',
+        priority: 'NORMAL'
       });
 
       await notificationQueue.addNotification({
         userId: request.tenantId,
-        createdBy: performerId,
+        
         title: 'Technician Assigned',
         message: `A technician has been assigned to your request: "${request.title}"`,
-        type: 'MAINTENANCE',
-        channels: ['IN_APP'],
+        category: 'GENERAL',
+        priority: 'NORMAL'
       });
 
       // Dispatch Socket.io real-time update
       socketService.toUser(request.tenantId, 'maintenance:updated', {
         id: requestId,
         status: 'IN_PROGRESS',
-        assignedTechnicianId: technicianId,
-      });
+        assignedTechnicianId: technicianId});
 
       // Broadcast dashboard cache invalidation globally
       socketService.broadcast('dashboard.invalidate', {});
@@ -139,8 +112,7 @@ export class MaintenanceService {
   async updateStatus(requestId: string, status: MaintenanceStatus, notes: string | undefined, performerId: string) {
     return prisma.$transaction(async (tx) => {
       const request = await tx.maintenanceRequest.findUnique({
-        where: { id: requestId },
-      });
+        where: { id: requestId }});
       if (!request) {
         throw new AppError('Maintenance request not found.', 404);
       }
@@ -150,41 +122,69 @@ export class MaintenanceService {
         data: { 
           status,
           ...(status === 'COMPLETED' ? { resolvedAt: new Date() } : {})
-        },
-      });
+        }});
 
-      await tx.maintenanceRequestHistory.create({
-        data: {
-          maintenanceRequestId: requestId,
-          oldStatus: request.status,
-          newStatus: status,
-          actionType: 'status_change',
-          performedBy: performerId,
-          notes: notes || 'Ticket status updated.',
-        },
-      });
+      
 
       // Notify the tenant of the status transition
       await notificationQueue.addNotification({
         userId: request.tenantId,
-        createdBy: performerId,
+        
         title: `Maintenance Request ${status}`,
         message: `The status of your request "${request.title}" has changed to ${status}.`,
-        type: 'MAINTENANCE',
-        channels: ['IN_APP', 'EMAIL'],
+        category: 'GENERAL',
+        priority: 'NORMAL'
       });
 
       // Dispatch Socket.io real-time update
       socketService.toUser(request.tenantId, 'maintenance:updated', {
         id: requestId,
-        status,
-      });
+        status});
 
       // Broadcast dashboard cache invalidation globally
       socketService.broadcast('dashboard.invalidate', {});
 
       return updatedRequest;
     });
+  }
+  async rateRequest(id: string, tenantId: string, rating: number, reviewComment?: string) {
+    if (rating < 1 || rating > 5) {
+      throw new AppError('Rating must be between 1 and 5 stars.', 400);
+    }
+
+    const request = await this.repo.findById(id);
+    if (!request) {
+      throw new AppError('Maintenance request not found.', 404);
+    }
+
+    if (request.tenantId !== tenantId) {
+      throw new AppError('You are not authorized to rate this request.', 403);
+    }
+
+    if (request.status !== 'COMPLETED') {
+      throw new AppError('Only completed requests can be rated.', 400);
+    }
+
+    if (request.rating !== null) {
+      throw new AppError('You have already submitted a rating for this request.', 400);
+    }
+
+    const updatedRequest = await prisma.maintenanceRequest.update({
+      where: { id },
+      data: {
+        rating,
+        reviewComment,
+        ratedAt: new Date()
+      }
+    });
+
+    // Notify operations dashboard in real-time
+    socketService.broadcast('dashboard.invalidate', {
+      type: 'rating_submitted',
+      requestId: id
+    });
+
+    return updatedRequest;
   }
 
   async getTimeline(requestId: string) {

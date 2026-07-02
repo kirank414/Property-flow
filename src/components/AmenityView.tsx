@@ -12,62 +12,132 @@ import {
   ShieldAlert,
   ArrowRight
 } from 'lucide-react';
-import { User, Property, BookingSlot } from '../types.ts';
+import { User, Property, BookingSlot, BookingStatus } from '../types.ts';
+import { 
+  useBookings, 
+  useCreateBooking, 
+  useUpdateBooking, 
+  useCancelBooking, 
+  useCheckInBooking, 
+  useCheckOutBooking 
+} from '../api/hooks';
 
 interface AmenityViewProps {
   currentUser: User;
   properties: Property[];
-  bookings: BookingSlot[];
-  onCreateBooking: (booking: any) => void;
-  onCancelBooking: (id: string) => void;
-  onCheckInBooking?: (id: string) => void;
-  onCheckOutBooking?: (id: string) => void;
+  amenities: string[];
+  bookings?: any[];
+  onCreateBooking?: any;
+  onUpdateBooking?: any;
+  onCancelBooking?: any;
+  onCheckInBooking?: any;
+  onCheckOutBooking?: any;
+  isLoading?: boolean;
 }
-
-const localAmenities = [
-  { name: 'Skyline Pool', location: 'Penthouse Deck', price: 25, icon: '🏊' },
-  { name: 'Fitness Center', location: 'Level 2 Fitness Room', price: 0, icon: '🏋️' },
-  { name: 'Penthouse Lounge', location: 'West Tower Lounge', price: 75, icon: '🍹' },
-  { name: 'Garden Lounge', location: 'Courtyard Garden', price: 15, icon: '🌳' },
-  { name: 'Tennis Courts', location: 'East Wing Courts', price: 10, icon: '🎾' }
-];
 
 const timeSlots = ['08:00 - 09:30', '10:00 - 11:30', '12:00 - 13:30', '14:00 - 15:30', '16:00 - 17:30', '18:00 - 19:30'];
 
 export default function AmenityView({
   currentUser,
   properties,
-  bookings,
+  amenities,
+  bookings: propBookings,
   onCreateBooking,
-  onCancelBooking,
-  onCheckInBooking,
-  onCheckOutBooking
+  onUpdateBooking,
+  isLoading: propIsLoading
 }: AmenityViewProps) {
-  const tenantProperty = currentUser.role === 'Tenant' && currentUser.propertyId ? currentUser.propertyId : properties[0]?.id || '';
-  const [selectedAmenity, setSelectedAmenity] = useState(localAmenities[0]);
-  const [selectedProperty, setSelectedProperty] = useState(tenantProperty);
+  const tenantProperty = currentUser.role === 'Tenant' && currentUser.propertyId ? currentUser.propertyId : '';
+  const [selectedAmenityName, setSelectedAmenityName] = useState(amenities[0] || 'Skyline Pool');
+  const [selectedProperty, setSelectedProperty] = useState(tenantProperty || properties[0]?.id || '');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(timeSlots[1]);
   const [notification, setNotification] = useState<{ type: 'success' | 'info' | 'error'; message: string | null } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Simulated Boot Loader Cycle
+  const { data: bookingsData, isLoading: hooksIsLoading } = useBookings();
+  const bookings = propBookings || bookingsData || [];
+  const isLoading = propIsLoading !== undefined ? propIsLoading : hooksIsLoading;
+
+  const createBookingMutation = useCreateBooking();
+  const updateBookingMutation = useUpdateBooking();
+  const cancelBookingMutation = useCancelBooking();
+  const checkInBookingMutation = useCheckInBooking();
+  const checkOutBookingMutation = useCheckOutBooking();
+  
+  // Edit mode state
+  const [editingBooking, setEditingBooking] = useState<BookingSlot | null>(null);
+
+  const availableAmenities = properties.find(p => p.id === selectedProperty)?.amenities || [];
+
+  const formatAMPM = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [hStr, mStr] = timeStr.split(':');
+    let h = parseInt(hStr, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12; 
+    return `${h.toString().padStart(2, '0')}:${mStr} ${ampm}`;
+  };
+
+  const formatSlotAMPM = (slot: string) => {
+    if (!slot) return '';
+    const [start, end] = slot.split(' - ');
+    return `${formatAMPM(start)} - ${formatAMPM(end)}`;
+  };
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 700);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!selectedProperty && properties.length > 0) {
+      setSelectedProperty(currentUser.role === 'Tenant' && currentUser.propertyId ? currentUser.propertyId : properties[0].id);
+    }
+  }, [properties, selectedProperty, currentUser]);
+
+  useEffect(() => {
+    if ((!selectedAmenityName || selectedAmenityName === 'Skyline Pool' || !availableAmenities.includes(selectedAmenityName)) && availableAmenities.length > 0) {
+      setSelectedAmenityName(availableAmenities[0]);
+    }
+  }, [availableAmenities, selectedAmenityName]);
 
   // Check if slot has a reservation overlap
   const isSlotBooked = (slot: string) => {
+    if (!slot) return false;
     const [start, end] = slot.split(' - ');
     return bookings.some(
-      b => (b.status === 'booked' || b.status === 'APPROVED' || b.status === 'IN_USE') && 
-      b.amenityName === selectedAmenity.name && 
+      b => (b.status === 'APPROVED' || b.status === 'IN_USE') && 
+      b.amenityName === selectedAmenityName && 
       b.propertyId === selectedProperty && 
+      b.date === selectedDate &&
       b.start === start &&
       b.end === end
     );
+  };
+
+  // Check if slot is in the past
+  const isSlotPast = (slot: string) => {
+    if (!slot) return false;
+    const now = new Date();
+    
+    // Create Date object for the selected date
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const selDate = new Date(year, month - 1, day);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // If selected date is strictly before today, it's past
+    if (selDate < today) return true;
+    
+    // If selected date is strictly after today, it's not past
+    if (selDate > today) return false;
+    
+    // Selected date is today, check time
+    const [start] = slot.split(' - ');
+    const [hours, minutes] = start.split(':').map(Number);
+    
+    // It's past if current time is past the slot start time
+    if (now.getHours() > hours || (now.getHours() === hours && now.getMinutes() >= minutes)) {
+      return true;
+    }
+    
+    return false;
   };
 
   // Current active user bookings
@@ -76,15 +146,25 @@ export default function AmenityView({
       return false;
     }
     return (
-      b.status === 'booked' || 
       b.status === 'APPROVED' || 
+      b.status === 'PENDING' ||
       b.status === 'IN_USE' || 
       b.status === 'COMPLETED' || 
-      b.status === 'NO_SHOW'
+      b.status === 'NO_SHOW' ||
+      b.status === 'CANCELLED' ||
+      b.status === 'booked'
     );
   });
 
   const handleBook = () => {
+    if (!selectedTimeSlot) {
+      setNotification({
+        type: 'info',
+        message: 'Please select a time slot first.'
+      });
+      return;
+    }
+
     if (isSlotBooked(selectedTimeSlot)) {
       setNotification({
         type: 'error',
@@ -94,20 +174,64 @@ export default function AmenityView({
     }
 
     const [start, end] = selectedTimeSlot.split(' - ');
-    onCreateBooking({
-      amenityName: selectedAmenity.name,
-      propertyId: selectedProperty,
-      user: currentUser.name,
-      start,
-      end,
-      price: selectedAmenity.price
-    });
+    if (editingBooking) {
+      if (onUpdateBooking) {
+        onUpdateBooking(editingBooking.id, {
+          amenityName: selectedAmenityName,
+          propertyId: selectedProperty,
+          user: currentUser.name,
+          date: selectedDate,
+          start,
+          end,
+        });
+        setNotification({
+          type: 'success',
+          message: `Updated booking for ${selectedAmenityName} successfully!`
+        });
+      }
+      setEditingBooking(null);
+    } else {
+      if (onCreateBooking) {
+        onCreateBooking(
+          {
+            amenityName: selectedAmenityName,
+            propertyId: selectedProperty,
+            user: currentUser.name,
+            date: selectedDate,
+            start,
+            end,
+          },
+          {
+            onSuccess: () => {
+              setNotification({
+                type: 'success',
+                message: `Reserved ${selectedAmenityName} at ${properties.find(p => p.id === selectedProperty)?.name || 'Property'} successfully!`
+              });
+            },
+            onError: (error: any) => {
+              setNotification({
+                type: 'error',
+                message: error.message
+              });
+            }
+          }
+        );
+      }
+    }
     
-    setNotification({
-      type: 'success',
-      message: `Reserved ${selectedAmenity.name} at ${properties.find(p => p.id === selectedProperty)?.name || 'Property'} successfully! Check your email for entry access passcodes.`
-    });
+    // Clear selection so the UI instantly updates optimistically
+    setSelectedTimeSlot('');
     setTimeout(() => setNotification(null), 5000);
+  };
+
+  const handleEditBooking = (booking: BookingSlot) => {
+    setEditingBooking(booking);
+    setSelectedProperty(booking.propertyId || properties[0]?.id || '');
+    // Need to set amenity name AFTER property is selected and availableAmenities updates, 
+    // but React handles this in subsequent renders
+    setTimeout(() => setSelectedAmenityName(booking.amenityName), 0);
+    setSelectedDate(booking.date);
+    setSelectedTimeSlot(`${booking.start} - ${booking.end}`);
   };
 
   return (
@@ -115,8 +239,8 @@ export default function AmenityView({
       
       {/* Header section with last audits */}
       <div className="border-b border-brand-border pb-5">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-title tracking-tight font-sans">Automated Amenity Booker</h1>
-        <p className="text-sm text-brand-body font-light mt-0.5">Maintain resident shared environments, prevent timing conflicts, and audit facility passcodes.</p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-title tracking-tight font-sans">Facility Booking</h1>
+        <p className="text-sm text-brand-body font-light mt-0.5">View amenity availability, create bookings, monitor check-in/check-out, and prevent booking conflicts.</p>
       </div>
 
       <div className="grid lg:grid-cols-12 gap-8 items-start">
@@ -140,30 +264,31 @@ export default function AmenityView({
                   </div>
                 </div>
               ))
+            ) : availableAmenities.length === 0 ? (
+              <div className="col-span-full py-8 text-center bg-brand-alternate/20 rounded-2xl border border-dashed border-brand-border text-brand-muted text-sm">
+                No amenities available for this property.
+              </div>
             ) : (
-              localAmenities.map((am) => {
-                const isActive = selectedAmenity.name === am.name;
+              availableAmenities.map((am) => {
+                const isActive = selectedAmenityName === am;
                 return (
                   <div
-                    key={am.name}
-                    onClick={() => setSelectedAmenity(am)}
+                    key={am}
+                    onClick={() => setSelectedAmenityName(am)}
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedAmenity(am); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedAmenityName(am); }}
                     className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between h-40 focus:ring-2 focus:ring-primary-teal ${isActive ? 'bg-primary-teal text-white border-primary-teal shadow-lg shadow-teal-500/15' : 'bg-brand-surface text-brand-body border-brand-border hover:border-primary-teal/70 hover:bg-brand-alternate'}`}
                     role="radio"
                     aria-checked={isActive}
-                    aria-label={`Amenity: ${am.name}, Location: ${am.location}`}
+                    aria-label={`Amenity: ${am}`}
                   >
                     <div className="flex justify-between items-start">
-                      <span className="text-3xl">{am.icon}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold font-mono ${isActive ? 'bg-white/20 text-[#5EEAD4]' : 'bg-brand-alternate text-brand-body'}`}>
-                        {am.price === 0 ? 'FREE' : `$${am.price}/hr`}
-                      </span>
+                      <span className="text-3xl"></span>
                     </div>
                     <div>
-                      <h4 className={`text-base font-extrabold ${isActive ? 'text-white font-black' : 'text-brand-title font-extrabold'}`}>{am.name}</h4>
+                      <h4 className={`text-base font-extrabold ${isActive ? 'text-white font-black' : 'text-brand-title font-extrabold'}`}>{am}</h4>
                       <span className={`text-[11px] block mt-0.5 ${isActive ? 'text-teal-200' : 'text-brand-muted'}`}>
-                        {properties.find(p => p.id === selectedProperty)?.name || 'Property'} - {am.location}
+                        {properties.find(p => p.id === selectedProperty)?.name || 'Property'} - { /* Location Removed */ }
                       </span>
                     </div>
                   </div>
@@ -174,20 +299,21 @@ export default function AmenityView({
 
           {/* Setup Booking Slot Card */}
           <div className="bg-brand-surface rounded-2xl border border-brand-border p-6 shadow-sm space-y-6">
-            <h3 className="text-base font-extrabold text-brand-title font-sans">Configure Reservation Parameters</h3>
+            <h3 className="text-base font-extrabold text-brand-title font-sans">Book Amenity</h3>
             
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               
               <div className="space-y-1">
-                <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Assigned Complex</label>
+                <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Property</label>
                 {isLoading ? (
                   <div className="h-10 bg-brand-alternate animate-pulse rounded-xl w-full"></div>
                 ) : currentUser.role === 'Tenant' ? (
                   <input
                     type="text"
-                    value={properties.find(p => p.id === selectedProperty)?.name || 'My Property'}
-                    className="w-full px-3.5 py-2.5 bg-brand-alternate border border-brand-border rounded-xl text-sm text-brand-muted min-h-[44px] focus:outline-none"
+                    value={`${properties.find(p => p.id === selectedProperty)?.name || 'My Property'} (Assigned Property)`}
+                    className="w-full px-3.5 py-2.5 bg-brand-alternate/50 border border-brand-border/50 rounded-xl text-sm text-brand-muted min-h-[44px] focus:outline-none cursor-not-allowed"
                     disabled
+                    readOnly
                   />
                 ) : (
                   <select
@@ -202,8 +328,18 @@ export default function AmenityView({
                 )}
               </div>
 
-              <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Preferred Time Window</label>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Booking Date</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-brand-alternate border border-brand-border rounded-xl text-sm focus:outline-none focus:border-primary-teal text-brand-title min-h-[44px] [color-scheme:dark]"
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-3">
+                <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Available Time Slots</label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {isLoading ? (
                     Array.from({ length: 6 }).map((_, slotIdx) => (
@@ -213,24 +349,35 @@ export default function AmenityView({
                     timeSlots.map((slot) => {
                       const isSelected = selectedTimeSlot === slot;
                       const isBooked = isSlotBooked(slot);
+                      const isPast = isSlotPast(slot);
                       return (
                         <button
                           key={slot}
                           type="button"
-                          disabled={isBooked}
+                          disabled={isBooked || (isPast && !editingBooking)}
                           onClick={() => setSelectedTimeSlot(slot)}
                           className={`py-2 px-1 text-[10px] sm:text-xs font-bold rounded-xl border leading-none transition-all cursor-pointer relative overflow-hidden flex flex-col items-center justify-center min-h-[44px] focus:ring-2 focus:ring-primary-teal/50 ${
                             isBooked 
                               ? 'bg-brand-alternate text-brand-muted border-brand-border cursor-not-allowed line-through' 
+                              : (isPast && !editingBooking)
+                              ? 'bg-brand-alternate/30 text-brand-muted border-brand-border/50 cursor-not-allowed opacity-60'
                               : isSelected 
                               ? 'bg-primary-teal text-white border-primary-teal shadow-md font-bold' 
                               : 'bg-brand-alternate text-brand-body border-brand-border hover:bg-brand-surface hover:border-primary-teal/50'
                           }`}
                         >
-                          <span>{slot}</span>
-                          {isBooked && (
-                            <span className="text-[8px] font-mono font-bold text-rose-400 uppercase mt-0.5 tracking-wider font-semibold">
+                          <span className="mb-0.5 whitespace-nowrap">{formatSlotAMPM(slot)}</span>
+                          {isBooked ? (
+                            <span className="text-[9px] font-mono font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wider bg-rose-500/10 px-1.5 py-0.5 rounded">
                               OCCUPIED
+                            </span>
+                          ) : (isPast && !editingBooking) ? (
+                            <span className="text-[9px] font-mono font-bold text-brand-muted uppercase tracking-wider bg-brand-surface border border-brand-border px-1.5 py-0.5 rounded">
+                              UNAVAILABLE
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                              AVAILABLE
                             </span>
                           )}
                         </button>
@@ -258,23 +405,55 @@ export default function AmenityView({
               </div>
             )}
 
-            <div className="p-4 bg-teal-500/10 rounded-xl border border-teal-500/20 text-xs text-primary-teal dark:text-secondary-teal leading-relaxed font-sans mt-2 flex items-start space-x-2">
-              <Sparkles className="w-4 h-4 mt-0.5 shrink-0 text-accent-teal" />
-              <span>You are reserving <span className="font-extrabold text-brand-title">{selectedAmenity.name}</span> for {currentUser.name}. Price tier totals <span className="font-mono font-bold text-brand-title">${selectedAmenity.price} USD</span>. Full access credentials will automatically sync inside your profile folder.</span>
+            <div className="p-4 bg-brand-alternate rounded-xl border border-brand-border text-xs text-brand-title leading-relaxed font-sans mt-2 space-y-2">
+              <div className="flex items-start space-x-2 border-b border-brand-border pb-2">
+                <Calendar className="w-4 h-4 mt-0.5 shrink-0 text-brand-muted" />
+                <span className="font-bold text-sm uppercase tracking-wider">Booking Summary</span>
+              </div>
+              <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                <div>
+                  <span className="block text-[10px] text-brand-muted uppercase font-bold tracking-wider">Property</span>
+                  <span className="font-semibold">{properties.find(p => p.id === selectedProperty)?.name || 'Property'}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-brand-muted uppercase font-bold tracking-wider">Amenity</span>
+                  <span className="font-semibold">{selectedAmenityName}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-brand-muted uppercase font-bold tracking-wider">Booking Date</span>
+                  <span className="font-semibold font-mono">{selectedDate}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-brand-muted uppercase font-bold tracking-wider">Current Status</span>
+                  <span className="font-semibold">
+                    {editingBooking 
+                      ? (editingBooking.status === 'IN_USE' ? 'In Use' : editingBooking.status === 'COMPLETED' ? 'Completed' : editingBooking.status === 'CANCELLED' || editingBooking.status === 'NO_SHOW' ? 'Cancelled' : 'Confirmed') 
+                      : 'Pending Creation'}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-brand-muted uppercase font-bold tracking-wider">Check-In Time</span>
+                  <span className="font-semibold font-mono">{formatAMPM(selectedTimeSlot.split(' - ')[0])}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-brand-muted uppercase font-bold tracking-wider">Check-Out Time</span>
+                  <span className="font-semibold font-mono">{formatAMPM(selectedTimeSlot.split(' - ')[1])}</span>
+                </div>
+              </div>
             </div>
 
             <button
               id="submit-book-amenity-btn"
               onClick={handleBook}
-              disabled={isSlotBooked(selectedTimeSlot) || isLoading}
+              disabled={(isSlotBooked(selectedTimeSlot) && !editingBooking) || (isSlotPast(selectedTimeSlot) && !editingBooking) || isLoading}
               className={`px-6 py-3 text-white font-semibold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center space-x-1.5 leading-none min-h-[44px] ${
-                isSlotBooked(selectedTimeSlot)
+                ((isSlotBooked(selectedTimeSlot) || isSlotPast(selectedTimeSlot)) && !editingBooking)
                   ? 'bg-brand-alternate border border-brand-border text-brand-muted cursor-not-allowed shadow-none'
                   : 'bg-primary-teal hover:bg-[#0F766E] focus:ring-2 focus:ring-primary-teal'
               }`}
             >
               <Calendar className="w-4 h-4 text-white" />
-              <span>{isSlotBooked(selectedTimeSlot) ? 'Time Window Occupied' : 'Book Facility Booking Slot'}</span>
+              <span>{((isSlotBooked(selectedTimeSlot) || isSlotPast(selectedTimeSlot)) && !editingBooking) ? 'Time Slot Unavailable' : editingBooking ? 'Save Changes' : 'Create Booking'}</span>
             </button>
 
           </div>
@@ -284,7 +463,9 @@ export default function AmenityView({
         {/* Right Column: Active Bookings Queue */}
         <div className="lg:col-span-4 bg-brand-surface rounded-2xl border border-brand-border p-5 shadow-sm space-y-4">
           <div className="border-b border-brand-border pb-3">
-            <h4 className="text-sm font-extrabold text-brand-title font-sans">Reservations Ledger ({userBookings.length})</h4>
+            <h4 className="text-sm font-extrabold text-brand-title font-sans">
+              {currentUser.role === 'Tenant' ? `My Bookings (${userBookings.length})` : `Facility Reservations (${userBookings.length})`}
+            </h4>
           </div>
 
           <div className="divide-y divide-brand-border space-y-1">
@@ -303,83 +484,139 @@ export default function AmenityView({
                 const propName = properties.find(p => p.id === b.propertyId)?.name || 'Property';
                 
                 return (
-                  <div key={b.id} className="py-3.5 flex justify-between items-start first:pt-0 last:pb-0 font-sans border-b last:border-b-0 border-brand-border">
+                  <div key={b.id} className="py-3.5 flex flex-col sm:flex-row justify-between items-start font-sans border-b last:border-b-0 border-brand-border gap-3">
                     <div className="space-y-1">
-                      <span className="text-[10px] text-brand-muted font-mono block uppercase">{propName}</span>
-                      <h5 className="text-xs font-extrabold text-brand-title leading-snug">{b.amenityName}</h5>
-                      <div className="flex items-center space-x-1.5 text-[11px] text-brand-body font-light font-mono leading-none">
-                        <Clock className="w-3.5 h-3.5 text-brand-muted" />
-                        <span>{b.start} - {b.end}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[10px] text-brand-muted font-mono uppercase font-bold tracking-wider">Booking ID: {b.id.substring(0,8)}</span>
+                      </div>
+                      <h5 className="text-sm font-extrabold text-brand-title leading-snug">{b.amenityName}</h5>
+                      {currentUser.role !== 'Tenant' && <span className="text-xs text-brand-body font-medium">{propName}</span>}
+                      {currentUser.role !== 'Tenant' && <span className="text-xs text-brand-muted block font-medium mt-0.5">Tenant: {b.user}</span>}
+                      
+                      <div className="flex flex-col space-y-0.5 text-[11px] text-brand-muted pt-1">
+                        <span className="font-mono font-medium">Booking Date: {b.date}</span>
+                        <span className="font-mono font-medium">Check-In Time: {formatAMPM(b.start)}</span>
+                        <span className="font-mono font-medium">Check-Out Time: {formatAMPM(b.end)}</span>
                       </div>
                     </div>
 
                     <div className="flex flex-col items-end space-y-2">
                       {b.status === 'IN_USE' ? (
                         <span className="text-[10px] font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
-                          IN USE
+                          In Use
                         </span>
                       ) : b.status === 'COMPLETED' ? (
                         <span className="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
-                          COMPLETED
+                          Completed
                         </span>
-                      ) : b.status === 'NO_SHOW' ? (
+                      ) : b.status === 'NO_SHOW' || b.status === 'CANCELLED' ? (
                         <span className="text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
-                          NO SHOW
+                          Cancelled
                         </span>
                       ) : (
                         <span className="text-[10px] font-mono font-bold bg-teal-500/10 text-primary-teal dark:text-secondary-teal border border-teal-500/20 px-2 py-0.5 rounded leading-none uppercase shrink-0">
-                          CONFIRMED
+                          Confirmed
                         </span>
                       )}
 
-                      {(b.status === 'booked' || b.status === 'APPROVED') && onCheckInBooking && (
-                        <button
-                          onClick={() => {
-                            onCheckInBooking(b.id);
-                            setNotification({
-                              type: 'success',
-                              message: 'Check-in processed successfully!'
-                            });
-                            setTimeout(() => setNotification(null), 4000);
-                          }}
-                          className="text-[10px] text-teal-600 hover:text-teal-700 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
-                          aria-label="Check in to booking"
-                        >
-                          <span>🔑 Check In</span>
-                        </button>
-                      )}
+                      {currentUser.role !== 'Tenant' && (
+                        <div className="flex flex-col space-y-2 w-full pt-1">
+                          {(b.status === 'APPROVED' || b.status === 'booked' || b.status === 'PENDING') && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  checkInBookingMutation.mutate(b.id, {
+                                    onSuccess: () => {
+                                      setNotification({
+                                        type: 'success',
+                                        message: 'Check-in processed successfully!'
+                                      });
+                                      setTimeout(() => setNotification(null), 4000);
+                                    },
+                                    onError: (error: any) => {
+                                      setNotification({
+                                        type: 'error',
+                                        message: error.response?.data?.message || error.message || 'Check-in failed'
+                                      });
+                                      setTimeout(() => setNotification(null), 5000);
+                                    }
+                                  });
+                                }}
+                                className="text-[10px] text-teal-600 hover:text-teal-700 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
+                                aria-label="Check in to booking"
+                              >
+                                <span>🔑 Check In</span>
+                              </button>
 
-                      {b.status === 'IN_USE' && onCheckOutBooking && (
-                        <button
-                          onClick={() => {
-                            onCheckOutBooking(b.id);
-                            setNotification({
-                              type: 'success',
-                              message: 'Check-out processed successfully!'
-                            });
-                            setTimeout(() => setNotification(null), 4000);
-                          }}
-                          className="text-[10px] text-amber-600 hover:text-amber-700 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
-                          aria-label="Check out of booking"
-                        >
-                          <span>🚪 Check Out</span>
-                        </button>
-                      )}
+                              <button
+                                onClick={() => handleEditBooking(b)}
+                                className="text-[10px] text-brand-body hover:text-brand-title font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
+                                aria-label="Edit booking"
+                              >
+                                <span>✏️ Edit Booking</span>
+                              </button>
 
-                      {isCreator && (b.status === 'booked' || b.status === 'APPROVED') && (
+                              <button
+                                onClick={() => {
+                                  cancelBookingMutation.mutate(b.id);
+                                  setNotification({
+                                    type: 'info',
+                                    message: 'Booking cancelled successfully!'
+                                  });
+                                  setTimeout(() => setNotification(null), 4000);
+                                }}
+                                className="text-[10px] text-rose-400 hover:text-rose-500 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
+                                aria-label="Cancel active reservation"
+                              >
+                                <Trash2 className="w-3 h-3 text-rose-400 inline" />
+                                <span>Cancel Booking</span>
+                              </button>
+                            </>
+                          )}
+
+                          {b.status === 'IN_USE' && (
+                            <button
+                              onClick={() => {
+                                checkOutBookingMutation.mutate(b.id, {
+                                  onSuccess: () => {
+                                    setNotification({
+                                      type: 'success',
+                                      message: 'Check-out processed successfully!'
+                                    });
+                                    setTimeout(() => setNotification(null), 4000);
+                                  },
+                                  onError: (error: any) => {
+                                    setNotification({
+                                      type: 'error',
+                                      message: error.response?.data?.message || error.message || 'Check-out failed'
+                                    });
+                                    setTimeout(() => setNotification(null), 5000);
+                                  }
+                                });
+                              }}
+                              className="text-[10px] text-amber-600 hover:text-amber-700 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
+                              aria-label="Check out of booking"
+                            >
+                              <span>🚪 Check Out</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      
+                      {currentUser.role === 'Tenant' && isCreator && (b.status === 'APPROVED') && (
                         <button
                           onClick={() => {
-                            onCancelBooking(b.id);
+                            cancelBookingMutation.mutate(b.id);
                             setNotification({
                               type: 'info',
                               message: 'Allocation release synced successfully!'
                             });
                             setTimeout(() => setNotification(null), 4000);
                           }}
-                          className="text-[10px] text-rose-400 hover:text-rose-500 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none"
+                          className="text-[10px] text-rose-400 hover:text-rose-500 font-extrabold flex items-center space-x-0.5 cursor-pointer leading-none pt-1"
                           aria-label="Cancel active reservation"
                         >
-                          <Trash2 className="w-3 h-3 text-rose-400" />
+                          <Trash2 className="w-3 h-3 text-rose-400 inline" />
                           <span>Cancel Slot</span>
                         </button>
                       )}
@@ -394,9 +631,11 @@ export default function AmenityView({
                   🗝️
                 </div>
                 <div>
-                  <h5 className="font-extrabold text-brand-title text-xs">No reservations scheduled</h5>
+                  <h5 className="font-extrabold text-brand-title text-xs">{currentUser.role === 'Tenant' ? 'No upcoming bookings' : 'No facility bookings found.'}</h5>
                   <p className="text-[10px] text-brand-body max-w-[200px] mx-auto mt-1 leading-normal font-light">
-                    Your active booking lists are clear. Configure parameters above to reserve Skyline Pool or Tennis Court slots.
+                    {currentUser.role === 'Tenant' 
+                      ? 'You have no upcoming bookings. Book an available amenity to get started.' 
+                      : 'No bookings match the selected criteria.'}
                   </p>
                 </div>
               </div>
@@ -409,3 +648,6 @@ export default function AmenityView({
     </div>
   );
 }
+
+
+

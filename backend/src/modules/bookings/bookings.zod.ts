@@ -7,36 +7,36 @@ export const createBookingSchema = z.object({
   body: z.object({
     amenityId: uuidSchema,
     tenantId: uuidSchema,
-    startTime: z.string().datetime({ message: 'Start time must be a valid ISO 8601 string' }),
-    endTime: z.string().datetime({ message: 'End time must be a valid ISO 8601 string' }),
+    startTime: z.string().datetime({ message: 'Invalid start time' }),
+    endTime: z.string().datetime({ message: 'Invalid end time' })
   }).refine((data) => new Date(data.endTime) > new Date(data.startTime), {
     message: 'End time must be after start time',
-    path: ['endTime'],
-  }),
+    path: ['endTime']
+  })
 });
 
 export const updateBookingStatusSchema = z.object({
   body: z.object({
-    status: z.nativeEnum(BookingStatus),
+    status: z.nativeEnum(BookingStatus)
   }),
   params: z.object({
-    id: uuidSchema,
-  }),
+    id: uuidSchema
+  })
 });
 
 export const bookingIdParamSchema = z.object({
   params: z.object({
-    id: uuidSchema,
-  }),
+    id: uuidSchema
+  })
 });
 
 export const checkAvailabilitySchema = z.object({
   query: z.object({
     amenityId: uuidSchema,
-    startTime: z.string().datetime({ message: 'Start time must be a valid ISO 8601 string' }),
-    endTime: z.string().datetime({ message: 'End time must be a valid ISO 8601 string' }),
+    startTime: z.string().datetime({ message: 'Invalid start time' }),
+    endTime: z.string().datetime({ message: 'Invalid end time' })
   }).refine((data) => new Date(data.endTime) > new Date(data.startTime), {
     message: 'End time must be after start time',
-    path: ['endTime'],
-  }),
+    path: ['endTime']
+  })
 });

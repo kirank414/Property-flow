@@ -4,7 +4,7 @@ import { app } from './app';
 import { env } from './config/env';
 import { connectRedis, redisClient } from './config/redis';
 import { socketService } from './sockets/socket.service';
-import { notificationWorker } from './queues/workers/notification.worker';
+
 import { prisma } from './config/db';
 import { logger } from './utils/logger';
 
@@ -20,14 +20,14 @@ const startServer = async () => {
 
     // 3. Start BullMQ background worker listener
     // By invoking worker getter, we trigger the process thread pool startup
-    logger.info(`👷 BullMQ Sandboxed Notification worker active. Concurrency: ${notificationWorker.opts.concurrency}`);
+
 
     server.listen(env.PORT, () => {
-      logger.info(`🚀 Zillow API Gateway listening on port ${env.PORT} in ${env.NODE_ENV} mode.`);
+      logger.info(`🚀 PropertyFlow API Gateway listening on port ${env.PORT} in ${env.NODE_ENV} mode.`);
       logger.info(`📖 API documentation spec available at http://localhost:${env.PORT}/api-docs`);
     });
   } catch (error: any) {
-    logger.error('❌ Failed to boot Zillow API Gateway:', error);
+    logger.error('❌ Failed to boot PropertyFlow API Gateway:', error);
     process.exit(1);
   }
 };
@@ -44,10 +44,10 @@ const handleGracefulShutdown = async (signal: string) => {
   // Step B: Terminate background task loops and wait for current tasks
   try {
     logger.info('Draining background worker threads...');
-    await notificationWorker.close();
-    logger.info('Notification worker shutdown completed.');
+
+
   } catch (err: any) {
-    logger.error('Error draining notification worker:', err);
+
   }
 
   // Step C: Terminate storage layer client bindings
@@ -63,7 +63,7 @@ const handleGracefulShutdown = async (signal: string) => {
     logger.error('Error closing storage gateways:', err);
   }
 
-  logger.info('Zillow API Gateway exited cleanly.');
+  logger.info('PropertyFlow API Gateway exited cleanly.');
   process.exit(0);
 };
 

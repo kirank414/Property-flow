@@ -9,8 +9,7 @@ export class AmenitiesController {
       const amenity = await amenitiesService.createAmenity(req.body, req.user?.id);
       res.status(201).json({
         status: 'success',
-        data: { amenity },
-      });
+        data: { amenity }});
     } catch (error) {
       next(error);
     }
@@ -21,8 +20,7 @@ export class AmenitiesController {
       const amenity = await amenitiesService.updateAmenity(req.params.id, req.body, req.user?.id);
       res.status(200).json({
         status: 'success',
-        data: { amenity },
-      });
+        data: { amenity }});
     } catch (error) {
       next(error);
     }
@@ -33,8 +31,7 @@ export class AmenitiesController {
       await amenitiesService.deleteAmenity(req.params.id, req.user?.id);
       res.status(200).json({
         status: 'success',
-        message: 'Amenity soft-deleted successfully.',
-      });
+        message: 'Success' });
     } catch (error) {
       next(error);
     }
@@ -45,8 +42,7 @@ export class AmenitiesController {
       const amenity = await amenitiesService.getAmenityById(req.params.id);
       res.status(200).json({
         status: 'success',
-        data: { amenity },
-      });
+        data: { amenity }});
     } catch (error) {
       next(error);
     }
@@ -59,13 +55,11 @@ export class AmenitiesController {
         page: page ? parseInt(page as string, 10) : undefined,
         limit: limit ? parseInt(limit as string, 10) : undefined,
         search: search as string,
-        propertyId: propertyId as string,
-      });
+        propertyId: propertyId as string});
 
       res.status(200).json({
         status: 'success',
-        data: result,
-      });
+        data: result});
     } catch (error) {
       next(error);
     }

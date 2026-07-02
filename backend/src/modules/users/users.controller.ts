@@ -12,17 +12,15 @@ export class UsersController {
           passwordHash: req.body.password, // Plain text password passed as password
           firstName: req.body.firstName,
           lastName: req.body.lastName,
-          phone: req.body.phone,
+          
           role: req.body.role,
-          propertyId: req.body.propertyId,
-        },
+          propertyId: req.body.propertyId},
         req.user?.id
       );
 
       res.status(201).json({
         status: 'success',
-        data: { user },
-      });
+        data: { user }});
     } catch (error) {
       next(error);
     }
@@ -33,8 +31,7 @@ export class UsersController {
       const user = await usersService.updateUser(req.params.id, req.body, req.user?.id);
       res.status(200).json({
         status: 'success',
-        data: { user },
-      });
+        data: { user }});
     } catch (error) {
       next(error);
     }
@@ -45,8 +42,7 @@ export class UsersController {
       await usersService.deleteUser(req.params.id, req.user?.id);
       res.status(200).json({
         status: 'success',
-        message: 'User soft-deleted successfully.',
-      });
+        message: 'Success' });
     } catch (error) {
       next(error);
     }
@@ -54,11 +50,18 @@ export class UsersController {
 
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
+      const performer = req.user!;
+      const isSelf = performer.id === req.params.id;
+      const isElevated = performer.role ? ['ADMIN', 'MANAGER', 'STAFF'].includes(performer.role) : false;
+
+      if (!isSelf && !isElevated) {
+        return res.status(403).json({ success: false, message: 'Forbidden: You are not authorized to view this user profile.' });
+      }
+
       const user = await usersService.getUserById(req.params.id);
       res.status(200).json({
         status: 'success',
-        data: { user },
-      });
+        data: { user }});
     } catch (error) {
       next(error);
     }
@@ -71,13 +74,11 @@ export class UsersController {
         page: page ? parseInt(page as string, 10) : undefined,
         limit: limit ? parseInt(limit as string, 10) : undefined,
         search: search as string,
-        role: role as any,
-      });
+        role: role as any});
 
       res.status(200).json({
         status: 'success',
-        data: result,
-      });
+        data: result});
     } catch (error) {
       next(error);
     }

@@ -13,8 +13,7 @@ export class AmenitiesRepository {
     status?: string;
   }) {
     return prisma.amenity.create({
-      data,
-    });
+      data});
   }
 
   async update(
@@ -33,28 +32,24 @@ export class AmenitiesRepository {
   ) {
     return prisma.amenity.update({
       where: { id },
-      data,
-    });
+      data});
   }
 
   async delete(id: string) {
     return prisma.amenity.update({
       where: { id },
-      data: { deletedAt: new Date() },
-    });
+      data: {  }});
   }
 
   async findById(id: string) {
     return prisma.amenity.findFirst({
-      where: { id, deletedAt: null },
+      where: { id },
       include: {
-        property: true,
-      },
-    });
+        property: true}});
   }
 
   async findAll(options: { skip?: number; take?: number; search?: string; propertyId?: string }) {
-    const where: any = { deletedAt: null };
+    const where: any = { };
 
     if (options.propertyId) {
       where.propertyId = options.propertyId;
@@ -75,14 +70,11 @@ export class AmenitiesRepository {
       include: {
         property: true,
         bookings: {
-          where: { deletedAt: null, status: 'APPROVED' },
-        },
-      },
-    });
+          where: { status: 'APPROVED' }}}});
   }
 
   async count(options: { search?: string; propertyId?: string }) {
-    const where: any = { deletedAt: null };
+    const where: any = { };
 
     if (options.propertyId) {
       where.propertyId = options.propertyId;

@@ -207,6 +207,29 @@ export function useCreateMaintenanceRequest() {
   });
 }
 
+export function useUpdateMaintenanceRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => MaintenanceService.update(id, data),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
+export function useDeleteMaintenanceRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: MaintenanceService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
 export function useAssignMaintenanceRequest() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -231,6 +254,19 @@ export function useUpdateMaintenanceStatus() {
   });
 }
 
+export function useRateMaintenanceRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, rating, reviewComment }: { id: string; rating: number; reviewComment?: string }) =>
+      MaintenanceService.rate(id, rating, reviewComment),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
 export function useMaintenanceTimeline(id: string) {
   return useQuery({
     queryKey: ['maintenance', id, 'timeline'],
@@ -245,7 +281,37 @@ export function useMaintenanceTimeline(id: string) {
 export function useBookings(filters?: { tenantId?: string; amenityId?: string; status?: BookingStatus }) {
   return useQuery({
     queryKey: ['bookings', filters],
-    queryFn: () => BookingsService.list(filters),
+    queryFn: async () => {
+      const dtos = await BookingsService.list(filters);
+      return dtos.map(dto => {
+        const dateObj = new Date(dto.startTime);
+        const endObj = new Date(dto.endTime);
+        const date = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}-${dateObj.getDate().toString().padStart(2, '0')}`;
+        
+        // Ensure format HH:mm using local timezone
+        const formatTime = (d: Date) => {
+          const h = d.getHours().toString().padStart(2, '0');
+          const m = d.getMinutes().toString().padStart(2, '0');
+          return `${h}:${m}`;
+        };
+        const start = formatTime(dateObj);
+        const end = formatTime(endObj);
+        
+        return {
+          id: dto.id,
+          amenityName: (dto as any).amenity?.name || dto.amenityName || 'Amenity',
+          propertyId: (dto as any).amenity?.propertyId || (dto as any).propertyId || '', // fallback
+          user: (dto as any).tenant ? `${(dto as any).tenant.firstName} ${(dto as any).tenant.lastName}` : (dto.tenantName || 'Tenant'),
+          date,
+          start,
+          end,
+          status: dto.status,
+          price: 0,
+          actualCheckInAt: dto.actualCheckInAt,
+          actualCheckOutAt: dto.actualCheckOutAt
+        };
+      });
+    },
   });
 }
 
@@ -264,6 +330,17 @@ export function useUpdateBookingStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: BookingStatus }) => BookingsService.updateStatus(id, status),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
+export function useUpdateBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => BookingsService.update(id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });

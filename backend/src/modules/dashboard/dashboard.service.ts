@@ -20,13 +20,12 @@ export class DashboardService {
     // ==========================================
     // 1. PROPERTY KPIs
     // ==========================================
-    const totalProperties = await prisma.property.count({ where: { deletedAt: null } });
+    const totalProperties = await prisma.property.count({ where: { } });
     
     // Occupancy Rate: Average occupancy rate across all active properties
     const propertiesData = await prisma.property.findMany({
-      where: { deletedAt: null },
-      select: { occupancyRate: true },
-    });
+      where: { },
+      select: { occupancyRate: true }});
     const avgOccupancyRate = propertiesData.length > 0 
       ? Number((propertiesData.reduce((acc, p) => acc + p.occupancyRate, 0) / propertiesData.length).toFixed(1))
       : 0;
@@ -34,23 +33,15 @@ export class DashboardService {
     // Active Tenants: users linked to the Tenant role
     const activeTenants = await prisma.user.count({
       where: {
-        deletedAt: null,
-        roles: {
-          some: {
-            role: {
-              name: 'Tenant',
-            },
-          },
-        },
-      },
+        role: 'TENANT' 
+      }
     });
 
     // ==========================================
     // 2. MAINTENANCE KPIs
     // ==========================================
     const maintenanceRequests = await prisma.maintenanceRequest.findMany({
-      where: { deletedAt: null },
-    });
+      where: { }});
 
     const totalRequests = maintenanceRequests.length;
     const completedRequests = maintenanceRequests.filter(r => r.status === MaintenanceStatus.COMPLETED);
@@ -110,9 +101,8 @@ export class DashboardService {
     // 3. AMENITY KPIs
     // ==========================================
     const bookings = await prisma.amenityBooking.findMany({
-      where: { deletedAt: null },
-      include: { amenity: true },
-    });
+      where: { },
+      include: { amenity: true }});
 
     const totalBookings = bookings.length;
     const activeBookings = bookings.filter(b => b.status === BookingStatus.IN_USE).length;
@@ -187,35 +177,29 @@ export class DashboardService {
     // ==========================================
     // Bookings trend
     const currentMonthBookings = await prisma.amenityBooking.count({
-      where: { deletedAt: null, createdAt: { gte: thirtyDaysAgo } },
-    });
+      where: { createdAt: { gte: thirtyDaysAgo } }});
     const prevMonthBookings = await prisma.amenityBooking.count({
-      where: { deletedAt: null, createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
-    });
+      where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } }});
     const bookingsTrend = prevMonthBookings > 0
       ? Number((((currentMonthBookings - prevMonthBookings) / prevMonthBookings) * 100).toFixed(1))
       : currentMonthBookings > 0 ? 100 : 0;
 
     // Maintenance completions trend
     const currentMonthCompletions = await prisma.maintenanceRequest.count({
-      where: { deletedAt: null, status: MaintenanceStatus.COMPLETED, resolvedAt: { gte: thirtyDaysAgo } },
-    });
+      where: { status: MaintenanceStatus.COMPLETED, resolvedAt: { gte: thirtyDaysAgo } }});
     const prevMonthCompletions = await prisma.maintenanceRequest.count({
-      where: { deletedAt: null, status: MaintenanceStatus.COMPLETED, resolvedAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
-    });
+      where: { status: MaintenanceStatus.COMPLETED, resolvedAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } }});
     const maintenanceTrend = prevMonthCompletions > 0
       ? Number((((currentMonthCompletions - prevMonthCompletions) / prevMonthCompletions) * 100).toFixed(1))
       : currentMonthCompletions > 0 ? 100 : 0;
 
     // Occupancy trend (mocked trend based on properties addition or average rate trend)
     const currentProperties = await prisma.property.findMany({
-      where: { deletedAt: null, createdAt: { gte: thirtyDaysAgo } },
-      select: { occupancyRate: true },
-    });
+      where: { createdAt: { gte: thirtyDaysAgo } },
+      select: { occupancyRate: true }});
     const prevProperties = await prisma.property.findMany({
-      where: { deletedAt: null, createdAt: { lt: thirtyDaysAgo } },
-      select: { occupancyRate: true },
-    });
+      where: { createdAt: { lt: thirtyDaysAgo } },
+      select: { occupancyRate: true }});
 
     const currentAvgOcc = currentProperties.length > 0
       ? currentProperties.reduce((acc, p) => acc + p.occupancyRate, 0) / currentProperties.length
@@ -232,9 +216,7 @@ export class DashboardService {
         occupancyRate: avgOccupancyRate,
         activeTenants,
         trends: {
-          occupancyRate: occupancyTrend,
-        },
-      },
+          occupancyRate: occupancyTrend}},
       maintenance: {
         averageResolutionTime: avgResolutionTime,
         openRequests: openRequests.length,
@@ -244,12 +226,9 @@ export class DashboardService {
         slaBreakdown: {
           withinSla: withinSlaCount,
           nearSlaBreach: nearSlaBreachCount,
-          slaBreached: slaBreachedCount,
-        },
+          slaBreached: slaBreachedCount},
         trends: {
-          completions: maintenanceTrend,
-        },
-      },
+          completions: maintenanceTrend}},
       amenity: {
         totalBookings,
         activeBookings,
@@ -260,10 +239,7 @@ export class DashboardService {
         mostPopularAmenity,
         peakAmenityUsageHours,
         trends: {
-          bookings: bookingsTrend,
-        },
-      },
-    };
+          bookings: bookingsTrend}}};
   }
 }
 

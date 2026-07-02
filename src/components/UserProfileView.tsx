@@ -143,36 +143,75 @@ export default function UserProfileView({
               </div>
 
               <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Profile Image URL (Optional)</label>
-                  <span className="text-[10px] text-brand-muted font-mono">Leave empty for default</span>
-                </div>
-                <input
-                  type="url"
-                  placeholder="https://example.com/profile-image.jpg"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  className="w-full px-4 py-2 bg-brand-alternate border border-brand-border rounded-xl text-xs sm:text-sm focus:outline-none focus:border-primary-teal focus:ring-2 focus:ring-primary-teal/15 text-brand-title transition-all"
-                />
-                {avatarUrl && (
-                  <div className="mt-2 flex items-center space-x-3">
-                    <img 
-                      src={avatarUrl} 
-                      alt="Profile preview" 
-                      className="w-12 h-12 rounded-xl object-cover ring-2 ring-primary-teal/20"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
+                <label className="text-xs font-bold text-brand-body uppercase tracking-wider block">Profile Image</label>
+                <div className="flex items-center space-x-4">
+                  {/* Avatar Display / Placeholder */}
+                  <div 
+                    className="relative group cursor-pointer" 
+                    onClick={() => document.getElementById('avatar-file-input')?.click()}
+                  >
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt="Profile preview" 
+                        className="w-20 h-20 rounded-2xl object-cover ring-4 ring-primary-teal/15 transition-all group-hover:opacity-75"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl ring-4 ring-primary-teal/15 bg-gradient-to-br from-primary-teal/30 to-primary-teal/10 text-primary-teal flex flex-col items-center justify-center text-xs font-bold shrink-0 transition-all group-hover:opacity-75">
+                        <span>Upload</span>
+                        <span className="text-[9px] text-slate-400 font-light mt-0.5">Image</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-[10px] uppercase font-bold rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity">
+                      Change
+                    </div>
+                  </div>
+                  
+                  {/* Upload controls */}
+                  <div className="flex flex-col space-y-1.5">
                     <button
                       type="button"
-                      onClick={() => setAvatarUrl('')}
-                      className="text-[10px] text-rose-500 hover:text-rose-600 font-semibold underline"
+                      onClick={() => document.getElementById('avatar-file-input')?.click()}
+                      className="px-3.5 py-2 bg-primary-teal hover:bg-[#0D9488] text-white text-xs font-bold rounded-xl transition-all cursor-pointer focus:outline-none"
                     >
-                      Remove image
+                      Choose Local File
                     </button>
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setAvatarUrl('')}
+                        className="text-[10px] text-left text-rose-500 hover:text-rose-600 font-semibold underline cursor-pointer focus:outline-none bg-transparent border-0 p-0"
+                      >
+                        Remove Image
+                      </button>
+                    )}
                   </div>
-                )}
+                </div>
+                
+                <input
+                  type="file"
+                  id="avatar-file-input"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 2 * 1024 * 1024) {
+                        alert('File size must be less than 2MB.');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = (uploadEvent) => {
+                        const base64String = uploadEvent.target?.result as string;
+                        setAvatarUrl(base64String);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                />
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AmenitiesController } from './amenities.controller';
 import { requireAuth } from '../../middlewares/auth';
-import { requirePermission } from '../../middlewares/rbac';
+import { requireRoles } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
 import { createAmenitySchema, updateAmenitySchema } from './amenities.zod';
 
@@ -15,7 +15,7 @@ router.get('/:id', requireAuth, AmenitiesController.getById);
 router.post(
   '/',
   requireAuth,
-  requirePermission('properties:edit'),
+  requireRoles(['ADMIN', 'MANAGER']),
   validate(createAmenitySchema),
   AmenitiesController.create
 );
@@ -23,7 +23,7 @@ router.post(
 router.patch(
   '/:id',
   requireAuth,
-  requirePermission('properties:edit'),
+  requireRoles(['ADMIN', 'MANAGER']),
   validate(updateAmenitySchema),
   AmenitiesController.update
 );
@@ -31,7 +31,7 @@ router.patch(
 router.delete(
   '/:id',
   requireAuth,
-  requirePermission('properties:edit'),
+  requireRoles(['ADMIN', 'MANAGER']),
   AmenitiesController.delete
 );
 

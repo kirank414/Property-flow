@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { PropertiesController } from './properties.controller';
 import { requireAuth } from '../../middlewares/auth';
-import { requirePermission } from '../../middlewares/rbac';
+import { requireRoles } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
 import {
   createPropertySchema,
   updatePropertySchema,
-  propertyIdParamSchema,
-} from './properties.zod';
+  propertyIdParamSchema} from './properties.zod';
 
 const router = Router();
 
@@ -16,34 +15,34 @@ router.use(requireAuth);
 
 router.post(
   '/',
-  requirePermission('properties:create'),
+  requireRoles(['ADMIN', 'MANAGER']),
   validate(createPropertySchema),
   PropertiesController.create,
 );
 
 router.get(
   '/',
-  requirePermission('properties:view'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF', 'TENANT']),
   PropertiesController.list,
 );
 
 router.get(
   '/:id',
-  requirePermission('properties:view'),
+  requireRoles(['ADMIN', 'MANAGER', 'STAFF', 'TENANT']),
   validate(propertyIdParamSchema),
   PropertiesController.getById,
 );
 
 router.patch(
   '/:id',
-  requirePermission('properties:edit'),
+  requireRoles(['ADMIN', 'MANAGER']),
   validate(updatePropertySchema),
   PropertiesController.update,
 );
 
 router.delete(
   '/:id',
-  requirePermission('properties:edit'),
+  requireRoles(['ADMIN', 'MANAGER']),
   validate(propertyIdParamSchema),
   PropertiesController.delete,
 );

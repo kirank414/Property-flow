@@ -6,8 +6,7 @@ import {
   registerSchema,
   loginSchema,
   forgotPasswordSchema,
-  resetPasswordSchema,
-} from './auth.zod';
+  resetPasswordSchema} from './auth.zod';
 
 import { requireAuth } from '../../middlewares/auth';
 

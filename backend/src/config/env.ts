@@ -13,6 +13,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
   DIRECT_URL: z.string(),
   REDIS_URL: z.string().default('redis://localhost:6379'),
+  FRONTEND_URL: z.string().default('http://localhost:3000'),
   JWT_PRIVATE_KEY_PATH: z.string().default('keys/jwt-private.key'),
   JWT_PUBLIC_KEY_PATH: z.string().default('keys/jwt-public.key'),
   JWT_ACCESS_EXPIRATION: z.string().default('15m'),
@@ -21,7 +22,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().default(25),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  FROM_EMAIL: z.string().email().default('no-reply@zillow.com'),
+  FROM_EMAIL: z.string().email().default('no-reply@propertyflow.com'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

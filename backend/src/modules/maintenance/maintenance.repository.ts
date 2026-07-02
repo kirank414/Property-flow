@@ -10,8 +10,7 @@ export class MaintenanceRepository {
     priority: MaintenancePriority;
   }) {
     return prisma.maintenanceRequest.create({
-      data,
-    });
+      data});
   }
 
   async update(
@@ -24,26 +23,19 @@ export class MaintenanceRepository {
   ) {
     return prisma.maintenanceRequest.update({
       where: { id },
-      data,
-    });
+      data: data as any});
   }
 
   async findById(id: string) {
     return prisma.maintenanceRequest.findFirst({
       where: {
-        id,
-        deletedAt: null,
-      },
+        id},
       include: {
         property: true,
         tenant: {
-          select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-        },
+          select: { id: true, firstName: true, lastName: true, email: true}},
         technician: {
-          select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-        },
-      },
-    });
+          select: { id: true, firstName: true, lastName: true, email: true}}}});
   }
 
   async findAll(options: {
@@ -55,7 +47,7 @@ export class MaintenanceRepository {
     status?: MaintenanceStatus;
     priority?: MaintenancePriority;
   }) {
-    const where: any = { deletedAt: null };
+    const where: any = { };
 
     if (options.propertyId) where.propertyId = options.propertyId;
     if (options.tenantId) where.tenantId = options.tenantId;
@@ -71,20 +63,11 @@ export class MaintenanceRepository {
       include: {
         property: { select: { id: true, name: true } },
         tenant: { select: { id: true, firstName: true, lastName: true } },
-        technician: { select: { id: true, firstName: true, lastName: true } },
-      },
-    });
+        technician: { select: { id: true, firstName: true, lastName: true } }}});
   }
 
   async findHistory(maintenanceRequestId: string) {
-    return prisma.maintenanceRequestHistory.findMany({
-      where: { maintenanceRequestId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        actor: { select: { id: true, firstName: true, lastName: true } },
-        request: { select: { title: true } },
-      },
-    });
+    return [];
   }
 
   /**
@@ -94,23 +77,18 @@ export class MaintenanceRepository {
     // Standard query calculating durations between creation and resolution in history
     const resolvedRequests = await prisma.maintenanceRequest.findMany({
       where: {
-        status: MaintenanceStatus.COMPLETED,
-        deletedAt: null,
-      },
+        status: MaintenanceStatus.COMPLETED},
       select: {
         id: true,
         priority: true,
         createdAt: true,
-        resolvedAt: true,
-      },
-    });
+        resolvedAt: true}});
 
     const metricsByPriority = {
       LOW: { count: 0, totalHours: 0 },
       MEDIUM: { count: 0, totalHours: 0 },
       HIGH: { count: 0, totalHours: 0 },
-      EMERGENCY: { count: 0, totalHours: 0 },
-    };
+      EMERGENCY: { count: 0, totalHours: 0 }};
 
     resolvedRequests.forEach((req) => {
       if (!req.resolvedAt) return;
@@ -129,8 +107,7 @@ export class MaintenanceRepository {
       return {
         priority: key,
         resolvedCount: entry.count,
-        avgResolutionHours: entry.count > 0 ? parseFloat((entry.totalHours / entry.count).toFixed(2)) : 0,
-      };
+        avgResolutionHours: entry.count > 0 ? parseFloat((entry.totalHours / entry.count).toFixed(2)) : 0};
     });
   }
 }

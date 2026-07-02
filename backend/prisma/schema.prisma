@@ -1,27 +1,18 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-// ==========================================
-// ENUMS
-// ==========================================
-enum PropertyStatus {
-  ACTIVE
-  INACTIVE
-  MAINTENANCE
-}
-
-enum MaintenanceStatus {
-  PENDING
-  ASSIGNED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+  TENANT
 }
 
 enum MaintenancePriority {
@@ -31,10 +22,12 @@ enum MaintenancePriority {
   EMERGENCY
 }
 
-enum AmenityStatus {
-  ACTIVE
-  INACTIVE
-  MAINTENANCE
+enum MaintenanceStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
 
 enum BookingStatus {
@@ -47,251 +40,138 @@ enum BookingStatus {
   NO_SHOW
 }
 
-enum NotificationType {
-  INFO
-  ALERT
-  MAINTENANCE
-  BOOKING
-}
-
-enum DeliveryChannel {
-  IN_APP
-  EMAIL
-  PUSH
-  SMS
-}
-
-enum DeliveryStatus {
-  PENDING
-  SENT
-  FAILED
-}
-
-// ==========================================
-// MODELS
-// ==========================================
-
 model User {
-  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                String
-  passwordHash         String               @map("password_hash")
-  firstName            String               @map("first_name") @db.VarChar(100)
-  lastName             String               @map("last_name") @db.VarChar(100)
-  phone                String               @db.VarChar(20)
-  avatarUrl            String?              @map("avatar_url") @db.VarChar(500)
-  propertyId           String?              @map("property_id") @db.Uuid
-  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt            DateTime?            @map("deleted_at") @db.Timestamptz(6)
+  id           String   @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(TENANT)
+  propertyId   String?  
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
 
-  // Relations
   property             Property?            @relation("PropertyTenants", fields: [propertyId], references: [id], onDelete: SetNull)
-  roles                UserRole[]
-  properties           Property[]
-  submittedRequests    MaintenanceRequest[] @relation("TenantRequests")
+  propertiesOwned      Property[]           @relation("PropertyOwner")
+  maintenanceRequests  MaintenanceRequest[] @relation("TenantRequests")
   assignedRequests     MaintenanceRequest[] @relation("TechnicianRequests")
   bookings             AmenityBooking[]
-  receivedNotifications Notification[]      @relation("NotificationRecipient")
-  createdNotifications Notification[]       @relation("NotificationCreator")
-  historyPerformed     MaintenanceRequestHistory[]
+  notifications        Notification[]       @relation("NotificationRecipient")
   auditLogs            AuditLog[]
 
-  @@map("users")
-}
-
-model Role {
-  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String           @db.VarChar(50)
-  description String?
-  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz(6)
-
-  // Relations
-  permissions RolePermission[]
-  users       UserRole[]
-
-  @@map("roles")
-}
-
-model Permission {
-  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String           @db.VarChar(100)
-  description String?
-  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz(6)
-
-  // Relations
-  roles       RolePermission[]
-
-  @@map("permissions")
-}
-
-model RolePermission {
-  roleId       String     @map("role_id") @db.Uuid
-  permissionId String     @map("permission_id") @db.Uuid
-  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@id([roleId, permissionId])
-  @@map("role_permissions")
-}
-
-model UserRole {
-  userId    String   @map("user_id") @db.Uuid
-  roleId    String   @map("role_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
-
-  @@id([userId, roleId])
-  @@map("user_roles")
+  @@index([email])
+  @@index([role])
 }
 
 model Property {
-  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String         @db.VarChar(255)
-  address   String         @db.VarChar(500)
-  type             String         @default("Residential") @db.VarChar(100)
-  imageUrl         String?        @map("image_url") @db.VarChar(500)
-  ownerId          String         @map("owner_id") @db.Uuid
-  status           PropertyStatus @default(ACTIVE)
-  units            Int            @default(50)
-  occupancyRate    Float          @default(90) @map("occupancy_rate")
-  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  type      String   @default("Residential")
+  units     Int      @default(50)
+  occupancyRate Float @default(90)
+  imageUrl  String?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
-  owner     User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  owner     User                 @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  tenants   User[]               @relation("PropertyTenants")
   requests  MaintenanceRequest[]
   amenities Amenity[]
-  tenants   User[]         @relation("PropertyTenants")
-
-  @@map("properties")
 }
 
 model MaintenanceRequest {
-  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  propertyId           String               @map("property_id") @db.Uuid
-  tenantId             String               @map("tenant_id") @db.Uuid
-  assignedTechnicianId String?              @map("assigned_technician_id") @db.Uuid
-  title                String               @db.VarChar(255)
-  description          String               @db.Text
-  category             String               @default("General") @db.VarChar(100)
-  status               MaintenanceStatus    @default(PENDING)
-  priority             MaintenancePriority  @default(MEDIUM)
-  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  resolvedAt           DateTime?            @map("resolved_at") @db.Timestamptz(6)
-  deletedAt            DateTime?            @map("deleted_at") @db.Timestamptz(6)
+  id                   String   @id @default(uuid())
+  propertyId           String
+  tenantId             String
+  assignedTechnicianId String?
+  title                String
+  description          String
+  category             String   @default("General")
+  priority             MaintenancePriority @default(MEDIUM)
+  status               MaintenanceStatus   @default(PENDING)
+  rating               Int?
+  reviewComment        String?
+  ratedAt              DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  resolvedAt           DateTime?
+  deletedAt            DateTime?
 
-  property             Property             @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  tenant               User                 @relation("TenantRequests", fields: [tenantId], references: [id], onDelete: Restrict)
-  technician           User?                @relation("TechnicianRequests", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
-  history              MaintenanceRequestHistory[]
+  property             Property @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  tenant               User     @relation("TenantRequests", fields: [tenantId], references: [id], onDelete: Restrict)
+  technician           User?    @relation("TechnicianRequests", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
 
-  @@map("maintenance_requests")
-}
-
-model MaintenanceRequestHistory {
-  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  maintenanceRequestId String               @map("maintenance_request_id") @db.Uuid
-  oldStatus            MaintenanceStatus?   @map("old_status")
-  newStatus            MaintenanceStatus?   @map("new_status")
-  oldPriority          MaintenancePriority? @map("old_priority")
-  newPriority          MaintenancePriority? @map("new_priority")
-  oldTechnicianId      String?              @map("old_technician_id") @db.Uuid
-  newTechnicianId      String?              @map("new_technician_id") @db.Uuid
-  actionType           String               @map("action_type") @db.VarChar(50)
-  performedBy          String               @map("performed_by") @db.Uuid
-  notes                String?              @db.Text
-  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  request              MaintenanceRequest   @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
-  actor                User                 @relation(fields: [performedBy], references: [id], onDelete: Restrict)
-
-  @@map("maintenance_request_history")
+  @@index([propertyId, status])
+  @@index([tenantId])
 }
 
 model Amenity {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  propertyId  String        @map("property_id") @db.Uuid
-  name        String        @db.VarChar(100)
-  description String?       @db.Text
-  capacity    Int
-  location    String?       @db.VarChar(255)
-  imageUrl    String?       @map("image_url") @db.VarChar(500)
-  rules       String        @default("[]") @db.Text
-  operatingHours String?    @map("operating_hours") @db.VarChar(100)
-  status      AmenityStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt   DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  id             String   @id @default(uuid())
+  propertyId     String
+  name           String
+  description    String?
+  capacity       Int
+  location       String?
+  imageUrl       String?
+  operatingHours String?
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
 
-  property    Property      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  bookings    AmenityBooking[]
-
-  @@map("amenities")
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bookings       AmenityBooking[]
 }
 
 model AmenityBooking {
-  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  amenityId String        @map("amenity_id") @db.Uuid
-  tenantId  String        @map("tenant_id") @db.Uuid
-  startTime DateTime      @map("start_time") @db.Timestamptz(6)
-  endTime   DateTime      @map("end_time") @db.Timestamptz(6)
-  status    BookingStatus @default(PENDING)
-  purpose   String?       @db.VarChar(500)
-  guestsCount Int         @default(1) @map("guests_count")
-  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  actualCheckInAt  DateTime?     @map("actual_check_in_at") @db.Timestamptz(6)
-  actualCheckOutAt DateTime?     @map("actual_check_out_at") @db.Timestamptz(6)
-  checkedInBy      String?       @map("checked_in_by") @db.Uuid
-  checkedOutBy     String?       @map("checked_out_by") @db.Uuid
-  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  id               String   @id @default(uuid())
+  amenityId        String
+  tenantId         String
+  startTime        DateTime
+  endTime          DateTime
+  status           BookingStatus @default(PENDING)
+  guestsCount      Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  actualCheckInAt  DateTime?
+  actualCheckOutAt DateTime?
+  deletedAt        DateTime?
 
-  amenity   Amenity       @relation(fields: [amenityId], references: [id], onDelete: Restrict)
-  tenant    User          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  amenity          Amenity @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+  tenant           User    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
-  @@map("amenity_bookings")
+  @@index([amenityId, startTime])
+  @@index([tenantId])
 }
 
 model Notification {
-  id                    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId                String            @map("user_id") @db.Uuid
-  createdBy             String?           @map("created_by") @db.Uuid
-  title                 String            @db.VarChar(255)
-  message               String            @db.Text
-  type                  NotificationType  @default(INFO)
-  channel               DeliveryChannel   @default(IN_APP)
-  status                DeliveryStatus    @default(PENDING)
-  deliveryAttempts      Int               @default(0) @map("delivery_attempts")
-  lastDeliveryAttemptAt DateTime?         @map("last_delivery_attempt_at") @db.Timestamptz(6)
-  readAt                DateTime?         @map("read_at") @db.Timestamptz(6)
-  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  deletedAt             DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  message     String
+  category    String   @default("info")
+  priority    String   @default("low")
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
-  user                  User              @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
-  creator               User?             @relation("NotificationCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  user        User     @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("notifications")
+  @@index([userId, read])
 }
 
 model AuditLog {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String?  @map("user_id") @db.Uuid
-  action    String   @db.VarChar(100)
-  entity    String   @db.VarChar(100)
-  entityId  String   @map("entity_id") @db.VarChar(100)
-  details   String?  @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String
+  details   String?
+  createdAt DateTime @default(now())
 
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@map("audit_logs")
 }

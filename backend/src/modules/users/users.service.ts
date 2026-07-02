@@ -2,7 +2,7 @@ import { UsersRepository } from './users.repository';
 import { CryptoService } from '../../utils/crypto';
 import { AppError } from '../../errors/AppError';
 import { logAudit } from '../../utils/audit';
-import { clearAuthCache } from '../../middlewares/rbac';
+
 import { prisma } from '../../config/db';
 
 export class UsersService {
@@ -19,7 +19,7 @@ export class UsersService {
   }
 
   private mapUserToDTO(user: any) {
-    const dbRoleName = user.roles?.[0]?.role?.name || 'Tenant';
+    const dbRoleName = user.role || 'Tenant';
     let role: 'ADMIN' | 'MANAGER' | 'STAFF' | 'TENANT' = 'TENANT';
     if (dbRoleName === 'Admin') role = 'ADMIN';
     else if (dbRoleName === 'Property Manager') role = 'MANAGER';
@@ -31,12 +31,11 @@ export class UsersService {
       firstName: user.firstName,
       lastName: user.lastName,
       name: `${user.firstName} ${user.lastName}`,
-      phone: user.phone,
+      
       role,
       avatarUrl: user.avatarUrl || null,
       propertyId: user.propertyId || null,
-      createdAt: user.createdAt.toISOString(),
-    };
+      createdAt: user.createdAt.toISOString()};
   }
 
   async createUser(
@@ -45,7 +44,7 @@ export class UsersService {
       passwordHash: string; // Plain password in request, will be hashed
       firstName: string;
       lastName: string;
-      phone: string;
+      
       role: 'ADMIN' | 'MANAGER' | 'STAFF' | 'TENANT';
       propertyId?: string | null;
     },
@@ -59,13 +58,6 @@ export class UsersService {
     const hashed = await CryptoService.hashPassword(data.passwordHash);
     const dbRoleName = this.getDBRoleName(data.role);
 
-    const roleRecord = await prisma.role.findFirst({
-      where: { name: dbRoleName },
-    });
-    if (!roleRecord) {
-      throw new AppError(`The role '${dbRoleName}' does not exist in the system.`, 500);
-    }
-
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
@@ -73,17 +65,10 @@ export class UsersService {
           passwordHash: hashed,
           firstName: data.firstName,
           lastName: data.lastName,
-          phone: data.phone,
-          propertyId: data.role === 'TENANT' ? data.propertyId || null : null,
-        },
-      });
+          
+          propertyId: data.role === 'TENANT' ? data.propertyId || null : null}});
 
-      await tx.userRole.create({
-        data: {
-          userId: newUser.id,
-          roleId: roleRecord.id,
-        },
-      });
+      
 
       return newUser;
     });
@@ -96,8 +81,7 @@ export class UsersService {
       action: 'CREATE',
       entity: 'User',
       entityId: user.id,
-      details: JSON.stringify({ email: mapped.email, firstName: mapped.firstName, lastName: mapped.lastName, role: mapped.role }),
-    });
+      details: JSON.stringify({ email: mapped.email, firstName: mapped.firstName, lastName: mapped.lastName, role: mapped.role })});
 
     return mapped;
   }
@@ -108,7 +92,7 @@ export class UsersService {
       email: string;
       firstName: string;
       lastName: string;
-      phone: string;
+      
       role: 'ADMIN' | 'MANAGER' | 'STAFF' | 'TENANT';
       propertyId?: string | null;
       avatarUrl?: string | null;
@@ -122,8 +106,8 @@ export class UsersService {
 
     // Authorization: User can update themselves, Admins can update anyone
     const currentUser = currentUserId ? await this.repo.findById(currentUserId) : null;
-    const currentUserRoleName = currentUser?.roles?.[0]?.role?.name || 'Tenant';
-    const isAdmin = currentUserRoleName === 'Admin';
+    const currentUserRoleName = currentUser?.role || 'TENANT';
+    const isAdmin = currentUserRoleName === 'ADMIN';
     const isSelf = id === currentUserId;
 
     if (!isAdmin && !isSelf) {
@@ -147,8 +131,8 @@ export class UsersService {
       if (data.email !== undefined) updateData.email = data.email;
       if (data.firstName !== undefined) updateData.firstName = data.firstName;
       if (data.lastName !== undefined) updateData.lastName = data.lastName;
-      if (data.phone !== undefined) updateData.phone = data.phone;
       if (data.avatarUrl !== undefined) updateData.avatarUrl = data.avatarUrl;
+      if (data.role !== undefined) updateData.role = data.role;
       
       // Property ID management
       if (data.propertyId !== undefined) {
@@ -157,35 +141,8 @@ export class UsersService {
 
       const updated = await tx.user.update({
         where: { id },
-        data: updateData,
+        data: updateData
       });
-
-      // Role update
-      if (data.role) {
-        const dbRoleName = this.getDBRoleName(data.role);
-        const roleRecord = await tx.role.findFirst({
-          where: { name: dbRoleName },
-        });
-        if (!roleRecord) {
-          throw new AppError(`The role '${dbRoleName}' does not exist in the system.`, 500);
-        }
-
-        // Delete current user roles
-        await tx.userRole.deleteMany({
-          where: { userId: id },
-        });
-
-        // Insert new user role
-        await tx.userRole.create({
-          data: {
-            userId: id,
-            roleId: roleRecord.id,
-          },
-        });
-
-        // Clear Redis authentication cache for this user
-        await clearAuthCache(id);
-      }
 
       return updated;
     });
@@ -198,8 +155,7 @@ export class UsersService {
       action: 'UPDATE',
       entity: 'User',
       entityId: id,
-      details: JSON.stringify(data),
-    });
+      details: JSON.stringify(data)});
 
     return mapped;
   }
@@ -211,15 +167,13 @@ export class UsersService {
     }
 
     const deleted = await this.repo.delete(id);
-    await clearAuthCache(id);
 
     await logAudit({
       userId: currentUserId,
       action: 'DELETE',
       entity: 'User',
       entityId: id,
-      details: 'Soft deleted user',
-    });
+      details: 'Soft deleted user'});
 
     return deleted;
   }
@@ -243,13 +197,11 @@ export class UsersService {
       skip,
       take: limit,
       search: filters.search,
-      role: dbRoleName,
-    });
+      role: dbRoleName});
 
     const total = await this.repo.count({
       search: filters.search,
-      role: dbRoleName,
-    });
+      role: dbRoleName});
 
     return {
       users: items.map((u) => this.mapUserToDTO(u)),
@@ -257,9 +209,7 @@ export class UsersService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+        totalPages: Math.ceil(total / limit)}};
   }
 }
 

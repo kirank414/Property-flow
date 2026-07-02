@@ -11,7 +11,7 @@ export class AuthService {
   /**
    * Registers a new user, hashes password using Argon2id, and generates session tokens
    */
-  async register(data: { email: string; passwordHash: string; firstName: string; lastName: string; phone: string }) {
+  async register(data: { email: string; passwordHash: string; firstName: string; lastName: string;  }) {
     const existing = await this.repo.findByEmail(data.email);
     if (existing) {
       throw new AppError('A user with this email address already exists.', 409);
@@ -20,8 +20,7 @@ export class AuthService {
     const hashed = await CryptoService.hashPassword(data.passwordHash);
     const user = await this.repo.createUser({
       ...data,
-      passwordHash: hashed,
-    });
+      passwordHash: hashed});
 
     const tokens = await this.generateSessionTokens(user.id);
     return {
@@ -30,12 +29,10 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
+        
         role: 'TENANT' as const,
-        propertyId: null,
-      },
-      tokens,
-    };
+        propertyId: null},
+      tokens};
   }
 
   /**
@@ -60,11 +57,11 @@ export class AuthService {
       });
     }
 
-    const dbRoleName = (user as any).roles?.[0]?.role?.name || 'Tenant';
-    let role: 'ADMIN' | 'MANAGER' | 'STAFF' | 'TENANT' = 'TENANT';
-    if (dbRoleName === 'Admin') role = 'ADMIN';
-    else if (dbRoleName === 'Property Manager') role = 'MANAGER';
-    else if (dbRoleName === 'Maintenance Staff') role = 'STAFF';
+    
+    const role = user.role as 'ADMIN' | 'MANAGER' | 'STAFF' | 'TENANT';
+    
+    
+    
 
     const tokens = await this.generateSessionTokens(user.id);
     return {
@@ -73,13 +70,11 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
+        
         avatarUrl: user.avatarUrl,
         role,
-        propertyId: user.propertyId || null,
-      },
-      tokens,
-    };
+        propertyId: user.propertyId || null},
+      tokens};
   }
 
   /**
@@ -91,23 +86,22 @@ export class AuthService {
       throw new AppError('User not found or deleted.', 404);
     }
 
-    const dbRoleName = user.roles?.[0]?.role?.name || 'Tenant';
-    let role: 'ADMIN' | 'MANAGER' | 'STAFF' | 'TENANT' = 'TENANT';
-    if (dbRoleName === 'Admin') role = 'ADMIN';
-    else if (dbRoleName === 'Property Manager') role = 'MANAGER';
-    else if (dbRoleName === 'Maintenance Staff') role = 'STAFF';
+    
+    const role = user.role as 'ADMIN' | 'MANAGER' | 'STAFF' | 'TENANT';
+    
+    
+    
 
     return {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      phone: user.phone,
+      
       avatarUrl: user.avatarUrl,
       role,
       propertyId: user.propertyId || null,
-      createdAt: user.createdAt.toISOString(),
-    };
+      createdAt: user.createdAt.toISOString()};
   }
 
   /**
@@ -190,8 +184,7 @@ export class AuthService {
 
     return {
       accessToken,
-      refreshToken,
-    };
+      refreshToken};
   }
 }
 

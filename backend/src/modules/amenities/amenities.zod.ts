@@ -10,9 +10,7 @@ export const createAmenitySchema = z.object({
     imageUrl: z.string().url().optional().nullable(),
     rules: z.array(z.string()).default([]),
     operatingHours: z.string().optional().nullable(),
-    status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE']).default('ACTIVE'),
-  }),
-});
+    status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE']).default('ACTIVE')})});
 
 export const updateAmenitySchema = z.object({
   body: z.object({
@@ -24,6 +22,4 @@ export const updateAmenitySchema = z.object({
     imageUrl: z.string().url().optional().nullable(),
     rules: z.array(z.string()).optional(),
     operatingHours: z.string().optional().nullable(),
-    status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE']).optional(),
-  }),
-});
+    status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE']).optional()})});

@@ -10,9 +10,7 @@ export const createUserSchema = z.object({
     lastName: z.string().min(1, 'Last name is required').max(100),
     phone: z.string().regex(phoneRegex, 'Phone number must be in E.164 format (e.g. +1234567890)'),
     role: z.enum(['ADMIN', 'MANAGER', 'STAFF', 'TENANT']),
-    propertyId: z.string().uuid('Invalid property ID').optional().nullable(),
-  }),
-});
+    propertyId: z.string().uuid('Invalid property ID').optional().nullable()})});
 
 export const updateUserSchema = z.object({
   body: z.object({
@@ -22,6 +20,4 @@ export const updateUserSchema = z.object({
     phone: z.string().regex(phoneRegex).optional(),
     role: z.enum(['ADMIN', 'MANAGER', 'STAFF', 'TENANT']).optional(),
     propertyId: z.string().uuid('Invalid property ID').optional().nullable(),
-    avatarUrl: z.string().url().optional().nullable(),
-  }),
-});
+    avatarUrl: z.string().url().optional().nullable()})});

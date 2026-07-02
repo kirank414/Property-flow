@@ -21,6 +21,7 @@ import { Property, User as UserType, MaintenanceRequest, BookingSlot } from '../
 import { PropertyCard, EmptyState } from './DesignSystem.tsx';
 import { propertyValidationSchema } from '../../shared/zod';
 import { useAmenities, useCreateProperty, useUpdateProperty, useDeleteProperty } from '../api/hooks';
+import { resizeAndCompressImage } from '../utils/image';
 
 interface PropertyViewProps {
   properties: Property[];
@@ -94,6 +95,16 @@ export default function PropertyView({
     }
   }, [isLoading, filteredProperties, selectedProperty]);
 
+  // Sync selectedProperty details with updated properties list
+  useEffect(() => {
+    if (selectedProperty) {
+      const updated = properties.find(p => p.id === selectedProperty.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedProperty)) {
+        setSelectedProperty(updated);
+      }
+    }
+  }, [properties, selectedProperty]);
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setFormTouched(true);
@@ -119,9 +130,35 @@ export default function PropertyView({
     if (editingProperty) {
       updatePropertyMutation.mutate({
         id: editingProperty.id,
-        data: { name, address, type, units, image: imageUrl || undefined }
+        data: { name, address, type, units, imageUrl: imageUrl || null }
+      }, {
+        onSuccess: (data) => {
+          if (data && data.id) {
+            const mapped: Property = {
+              id: data.id,
+              name: data.name,
+              address: data.address,
+              type: data.type as any,
+              units: data.units,
+              occupancy: data.occupancyRate,
+              image: data.imageUrl || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&auto=format&fit=crop&q=80',
+              manager: editingProperty.manager || 'Unassigned',
+              amenities: editingProperty.amenities || []
+            };
+            setSelectedProperty(mapped);
+          }
+          setActionNotification(`Property "${name}" updated successfully.`);
+          setFormTouched(false);
+          setFormError(null);
+          setShowAddModal(false);
+          setEditingProperty(null);
+          setImageUrl('');
+          setTimeout(() => setActionNotification(null), 5000);
+        },
+        onError: (err: any) => {
+          setFormError(err.response?.data?.message || err.message || 'Failed to update property details.');
+        }
       });
-      setActionNotification(`Property "${name}" updated successfully.`);
     } else {
       createPropertyMutation.mutate({
         name,
@@ -131,17 +168,36 @@ export default function PropertyView({
         occupancyRate: 100,
         ownerId: currentUser.id,
         status: 'ACTIVE',
-        image: imageUrl || undefined
+        imageUrl: imageUrl || null
+      }, {
+        onSuccess: (data) => {
+          if (data && data.id) {
+            const mapped: Property = {
+              id: data.id,
+              name: data.name,
+              address: data.address,
+              type: data.type as any,
+              units: data.units,
+              occupancy: data.occupancyRate,
+              image: data.imageUrl || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&auto=format&fit=crop&q=80',
+              manager: `${currentUser.name}`,
+              amenities: []
+            };
+            setSelectedProperty(mapped);
+          }
+          setActionNotification(`Portfolio asset "${name}" registered successfully.`);
+          setFormTouched(false);
+          setFormError(null);
+          setShowAddModal(false);
+          setEditingProperty(null);
+          setImageUrl('');
+          setTimeout(() => setActionNotification(null), 5000);
+        },
+        onError: (err: any) => {
+          setFormError(err.response?.data?.message || err.message || 'Failed to register property.');
+        }
       });
-      setActionNotification(`Portfolio asset "${name}" registered successfully.`);
     }
-
-    setFormTouched(false);
-    setFormError(null);
-    setShowAddModal(false);
-    setEditingProperty(null);
-
-    setTimeout(() => setActionNotification(null), 5000);
   };
 
   const openEditModal = (property: Property) => {
@@ -558,29 +614,55 @@ export default function PropertyView({
               </div>
 
               <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-brand-body uppercase block tracking-wider">Property Image URL (Optional)</label>
-                  <span className="text-[10px] text-brand-muted font-mono">Leave empty to use default</span>
-                </div>
-                <input
-                  type="url"
-                  placeholder="https://example.com/property-image.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-brand-alternate border border-brand-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-teal/15 text-brand-title transition-all"
-                />
-                {imageUrl && (
-                  <div className="mt-2">
+                <label className="text-xs font-bold text-brand-body uppercase block tracking-wider">Property Photo</label>
+                <div className="flex items-center space-x-4 p-3 bg-brand-alternate border border-brand-border rounded-xl">
+                  {imageUrl ? (
                     <img 
                       src={imageUrl} 
-                      alt="Property preview" 
-                      className="w-full h-32 object-cover rounded-lg border border-brand-border"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
+                      alt="Property Preview" 
+                      className="w-16 h-16 rounded-xl object-cover border border-brand-border shadow-xs" 
                     />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl border border-dashed border-brand-border bg-brand-alternate/50 flex items-center justify-center text-brand-muted text-xs select-none">
+                      No Photo
+                    </div>
+                  )}
+                  <div className="flex flex-col space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('property-file-input')?.click()}
+                      className="px-3 py-1.5 bg-brand-surface hover:bg-brand-alternate text-brand-title border border-brand-border rounded-lg text-xs font-semibold cursor-pointer focus:outline-none transition-colors"
+                    >
+                      Choose Local File
+                    </button>
+                    {imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl('')}
+                        className="text-[10px] text-left text-rose-500 hover:text-rose-600 font-semibold underline cursor-pointer focus:outline-none bg-transparent border-0 p-0"
+                      >
+                        Remove Image
+                      </button>
+                    )}
                   </div>
-                )}
+                </div>
+                <input
+                  type="file"
+                  id="property-file-input"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const base64String = await resizeAndCompressImage(file);
+                        setImageUrl(base64String);
+                      } catch (err: any) {
+                        alert(err.message || 'Failed to process property photo.');
+                      }
+                    }
+                  }}
+                  className="hidden"
+                />
               </div>
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-brand-border">
@@ -593,9 +675,12 @@ export default function PropertyView({
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-primary-teal hover:bg-primary-teal-hover focus:ring-2 focus:ring-primary-teal text-white rounded-xl text-xs font-semibold shadow-md cursor-pointer transition-all"
+                  disabled={createPropertyMutation.isPending || updatePropertyMutation.isPending}
+                  className="px-6 py-2.5 bg-primary-teal hover:bg-primary-teal-hover focus:ring-2 focus:ring-primary-teal text-white rounded-xl text-xs font-semibold shadow-md cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {editingProperty ? 'Save Changes' : 'Add Property'}
+                  {createPropertyMutation.isPending || updatePropertyMutation.isPending
+                    ? 'Saving...'
+                    : editingProperty ? 'Save Changes' : 'Add Property'}
                 </button>
               </div>
 
