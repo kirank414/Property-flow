@@ -4,7 +4,7 @@
   "description": "Production-ready enterprise backend for propertyflow",
   "main": "dist/server.js",
   "scripts": {
-    "build": "npx prisma generate && npx prisma db push --accept-data-loss && tsc",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "prisma:generate": "prisma generate",
