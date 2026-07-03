@@ -10,7 +10,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:demo-seed": "ts-node prisma/demo-seed.ts",
+    "prisma:demo-seed": "ts-node src/scripts/demo-seed.ts",
     "prisma:demo-clean": "ts-node prisma/clear-demo.ts",
     "test": "jest --runInBand --detectOpenHandles"
   },

@@ -39,9 +39,27 @@ export class AuthService {
    * Validates user credentials, triggers on-the-fly Argon2id password rehashing for legacy BCrypt accounts, and returns tokens
    */
   async login(email: string, password: string) {
-    const user = await this.repo.findByEmail(email);
+    let user = await this.repo.findByEmail(email);
     if (!user) {
-      throw new AppError('Invalid email or password.', 401);
+      // Demo accounts fallback: Auto-seed DB if it's completely empty and user tries to log in
+      const demoEmails = ['admin@propertyflow.com', 'manager@propertyflow.com', 'staff@propertyflow.com', 'tenant@propertyflow.com'];
+      if (demoEmails.includes(email) && password === 'password123') {
+        const userCount = await this.repo.count();
+        if (userCount === 0) {
+          console.log(`[Demo Auto-Seed] Database is empty. Seeding triggered by ${email}...`);
+          try {
+            const { runDemoSeed } = await import('../../scripts/demo-seed');
+            await runDemoSeed();
+            user = await this.repo.findByEmail(email);
+          } catch (seedErr) {
+            console.error('Auto-seed failed:', seedErr);
+          }
+        }
+      }
+
+      if (!user) {
+        throw new AppError('Invalid email or password.', 401);
+      }
     }
 
     const { isValid, needsRehash } = await CryptoService.verifyPassword(password, user.passwordHash);

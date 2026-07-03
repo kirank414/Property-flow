@@ -10,6 +10,10 @@ export class AuthRepository {
         email}});
   }
 
+  async count() {
+    return prisma.user.count();
+  }
+
   /**
    * Finds a user by ID
    */
