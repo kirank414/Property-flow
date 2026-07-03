@@ -120,11 +120,31 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail.trim()) return;
+    if (newPassword.length < 8) {
+      setResetError('Password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
     try {
-      await AuthService.forgotPassword(forgotEmail);
+      setIsAuthenticating(true);
+      await AuthService.resetPasswordImmediate({ email: forgotEmail, newPassword });
+      setResetError(null);
       setForgotSubmitted(true);
+      setTimeout(() => {
+        setForgotSubmitted(false);
+        setMode('login');
+        setPassword(newPassword);
+        setEmail(forgotEmail);
+        setNewPassword('');
+        setConfirmPassword('');
+      }, 3000);
     } catch (err: any) {
-      alert(err.response?.data?.message || err.message);
+      setResetError(err.response?.data?.message || err.message);
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -396,33 +416,30 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
               <div className="space-y-2">
                 <h1 className="text-3xl font-extrabold text-[#F8FAFC] leading-none">Reset Password</h1>
                 <p className="text-sm text-[#CBD5E1] font-light">
-                  Enter your email address below to receive a password reset link.
+                  Specify your email and input your new password to reset it immediately.
                 </p>
               </div>
 
               {forgotSubmitted ? (
                 <div className="bg-[#1E293B] border border-[#334155] p-6 rounded-2xl text-center space-y-4 animate-in fade-in">
-                  <div className="w-12 h-12 bg-[#14B8A6]/20 border border-[#14B8A6]/30 text-[#14B8A6] rounded-full flex items-center justify-center mx-auto text-xl">
-                    📧
+                  <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl">
+                    ✓
                   </div>
                   <div className="space-y-1.5">
-                    <h4 className="font-extrabold text-[#F8FAFC] text-sm">Password Reset Link Sent</h4>
+                    <h4 className="font-extrabold text-[#F8FAFC] text-sm">Password Changed Successfully</h4>
                     <p className="text-xs text-[#CBD5E1] leading-relaxed font-light">
-                      A password reset link has been sent to <span className="font-semibold text-white">{forgotEmail}</span>. Please check your email to complete the process.
+                      Your password has been updated. Redirecting you to the sign in page...
                     </p>
-                  </div>
-                  
-                  <div className="pt-2">
-                    <button
-                      onClick={() => setMode('reset')}
-                      className="w-full py-2.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-xs rounded-xl shadow-sm cursor-pointer transition-colors"
-                    >
-                      Proceed to Reset Password
-                    </button>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleForgotSubmit} className="space-y-4">
+                  {resetError && (
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-450 text-xs font-sans">
+                      {resetError}
+                    </div>
+                  )}
+
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
                       Email Address
@@ -440,11 +457,60 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
                     </div>
                   </div>
 
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Min 8 characters"
+                        className="w-full pl-10 pr-10 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-white"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#CBD5E1] uppercase tracking-wider select-none">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-type password"
+                        className="w-full pl-10 pr-10 py-3 border border-[#334155] rounded-xl text-[#F8FAFC] bg-[#111827] placeholder-slate-500 focus:outline-none focus:border-[#14B8A6] text-sm focus:ring-1 focus:ring-[#14B8A6] transition-all"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-white"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                    disabled={isAuthenticating}
+                    className="w-full py-3.5 bg-[#14B8A6] hover:bg-[#0F766E] text-white font-semibold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
                   >
-                    <span>Send Recovery Link</span>
+                    <span>{isAuthenticating ? 'Resetting...' : 'Reset Password Immediately'}</span>
                     <ArrowRight className="w-4 h-4 text-white" />
                   </button>
                 </form>

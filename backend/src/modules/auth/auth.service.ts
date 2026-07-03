@@ -172,6 +172,19 @@ export class AuthService {
   }
 
   /**
+   * Directly resets the password for a user given their email address (demo immediate flow)
+   */
+  async resetPasswordImmediate(email: string, newPassword: string) {
+    const user = await this.repo.findByEmail(email);
+    if (!user) {
+      throw new AppError('No user found with the specified email address.', 404);
+    }
+
+    const hashed = await CryptoService.hashPassword(newPassword);
+    await this.repo.updatePassword(user.id, hashed);
+  }
+
+  /**
    * Helper function generating access and refresh tokens, caching refresh token in Redis (7 days TTL)
    */
   private async generateSessionTokens(userId: string) {

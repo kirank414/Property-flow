@@ -6,7 +6,8 @@ import {
   registerSchema,
   loginSchema,
   forgotPasswordSchema,
-  resetPasswordSchema} from './auth.zod';
+  resetPasswordSchema,
+  resetPasswordImmediateSchema} from './auth.zod';
 
 import { requireAuth } from '../../middlewares/auth';
 
@@ -18,6 +19,7 @@ router.post('/refresh', AuthController.refresh);
 router.post('/logout', AuthController.logout);
 router.post('/forgot-password', limitAuth, validate(forgotPasswordSchema), AuthController.forgotPassword);
 router.post('/reset-password', limitAuth, validate(resetPasswordSchema), AuthController.resetPassword);
+router.post('/reset-password-immediate', limitAuth, validate(resetPasswordImmediateSchema), AuthController.resetPasswordImmediate);
 router.get('/me', requireAuth, AuthController.me);
 
 export const authRoutes = router;

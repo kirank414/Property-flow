@@ -52,6 +52,10 @@ export const AuthService = {
     await apiClient.post('/auth/reset-password', data);
   },
 
+  async resetPasswordImmediate(data: any): Promise<void> {
+    await apiClient.post('/auth/reset-password-immediate', data);
+  },
+
   async me(): Promise<UserDTO> {
     const res = await apiClient.get('/auth/me');
     return res.data.data.user;

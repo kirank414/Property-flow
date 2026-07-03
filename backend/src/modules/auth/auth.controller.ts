@@ -120,6 +120,18 @@ export class AuthController {
     }
   }
 
+  static async resetPasswordImmediate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, newPassword } = req.body;
+      await authService.resetPasswordImmediate(email, newPassword);
+      res.status(200).json({
+        status: 'success',
+        message: 'Success' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async me(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
