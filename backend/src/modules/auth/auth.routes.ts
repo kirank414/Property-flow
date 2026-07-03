@@ -22,5 +22,15 @@ router.post('/reset-password', limitAuth, validate(resetPasswordSchema), AuthCon
 router.post('/reset-password-immediate', limitAuth, validate(resetPasswordImmediateSchema), AuthController.resetPasswordImmediate);
 router.get('/me', requireAuth, AuthController.me);
 
+router.get('/force-seed', async (req, res) => {
+  try {
+    const { runDemoSeed } = await import('../../scripts/demo-seed');
+    await runDemoSeed();
+    res.status(200).json({ message: 'Database seeded successfully!' });
+  } catch (error) {
+    res.status(500).json({ error: 'Seed failed', details: error });
+  }
+});
+
 export const authRoutes = router;
 export default authRoutes;
