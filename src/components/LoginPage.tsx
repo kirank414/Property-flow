@@ -110,7 +110,12 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
         // Zod validation error
         setErrorMessage(err.errors[0].message);
       } else {
-        setErrorMessage(err.response?.data?.error?.message || 'Invalid credentials. Please try again.');
+        const errorMsg = err.response?.data?.message || err.response?.data?.error?.message;
+        if (errorMsg && (errorMsg.toLowerCase().includes('password') || errorMsg.toLowerCase().includes('credential'))) {
+          setErrorMessage('Wrong password. Please try again.');
+        } else {
+          setErrorMessage(errorMsg || 'Invalid credentials. Please try again.');
+        }
       }
     } finally {
       setIsAuthenticating(false);
