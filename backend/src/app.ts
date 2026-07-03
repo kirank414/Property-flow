@@ -38,7 +38,7 @@ app.use((req, res, next) => {
 // 2. Security Middlewares
 app.use(helmet());
 app.use(cors({ 
-  origin: env.NODE_ENV === 'production' ? env.FRONTEND_URL : true, // `true` reflects the request origin
+  origin: true, // Allow all origins for the internship demo to prevent CORS blocks
   credentials: true 
 }));
 

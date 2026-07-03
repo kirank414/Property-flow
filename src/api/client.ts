@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const apiClient = axios.create({
-  baseURL: ((import.meta as any).env?.VITE_API_URL as string) || 'http://localhost:5000/api/v1',
+  baseURL: ((import.meta as any).env?.VITE_API_URL as string) || 'https://property-flow-1.onrender.com/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
