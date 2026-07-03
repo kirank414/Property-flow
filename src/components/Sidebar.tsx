@@ -20,10 +20,11 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout }: SidebarProps) {
-  const menuItems = [
+  type MenuItem = { id: string; label: string; icon: any; badge?: string };
+  const menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Operations Feed', icon: LayoutDashboard },
     { id: 'properties', label: 'Properties Index', icon: Building2 },
-    { id: 'maintenance', label: 'Maintenance Requests', icon: Wrench },
+    { id: 'maintenance', label: 'Maintenance Requests', icon: Wrench, badge: 'activeRequests' },
     { id: 'amenities', label: 'Facility Booking', icon: Calendar },
     { id: 'analytics', label: 'Platform KPIs', icon: TrendingUp },
     { id: 'monitor', label: 'Real-Time Monitoring', icon: Activity },
