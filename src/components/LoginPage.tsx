@@ -184,9 +184,7 @@ export default function LoginPage({ users, onLogin, onBackToMarketing }: LoginPa
       <div className="hidden lg:flex lg:col-span-6 bg-[#111827] text-white p-12 flex-col justify-between relative overflow-hidden border-r border-[#334155]">
         
         {/* Abstract futuristic grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#020617_1px,transparent_1px),linear-gradient(to_bottom,#020617_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-35"></div>
-        <div className="absolute top-1/4 -left-20 w-80 h-80 bg-primary-teal rounded-full blur-3xl opacity-20"></div>
-        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent-teal rounded-full blur-3xl opacity-15"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#020617_1px,transparent_1px),linear-gradient(to_bottom,#020617_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-35"></div>
  
         {/* Brand */}
         <div className="flex items-center space-x-2 relative z-10 cursor-pointer" onClick={onBackToMarketing}>

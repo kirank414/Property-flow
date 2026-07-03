@@ -171,7 +171,7 @@ export default function DashboardView({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             onClick={() => onNavigate('maintenance')}
-            className="p-5 bg-brand-surface border border-brand-border rounded-2xl hover:border-primary-teal transition-all text-left flex items-start space-x-4 cursor-pointer shadow-2xs group"
+            className="p-5 bg-brand-surface border border-brand-border rounded-2xl text-left flex items-start space-x-4 cursor-pointer shadow-2xs group interactive-card"
           >
             <div className="w-12 h-12 bg-amber-500/10 text-warn-gold border border-amber-500/20 rounded-xl flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
               🛠️
@@ -187,7 +187,7 @@ export default function DashboardView({
 
           <button
             onClick={() => onNavigate('amenities')}
-            className="p-5 bg-brand-surface border border-brand-border rounded-2xl hover:border-primary-teal transition-all text-left flex items-start space-x-4 cursor-pointer shadow-2xs group"
+            className="p-5 bg-brand-surface border border-brand-border rounded-2xl text-left flex items-start space-x-4 cursor-pointer shadow-2xs group interactive-card"
           >
             <div className="w-12 h-12 bg-teal-500/10 text-primary-teal rounded-xl flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
               📅

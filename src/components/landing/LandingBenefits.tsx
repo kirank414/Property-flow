@@ -62,7 +62,7 @@ export default function LandingBenefits() {
                   </div>
                   <span className="text-xs font-bold text-white">Maintenance SLA Target Achievement</span>
                 </div>
-                <span className="text-xs font-mono font-bold text-teal-400">94.8% achieved</span>
+                <span className="text-xs font-mono font-bold text-teal-400 flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping mr-2"></span> Live Tracking</span>
               </div>
               <div className="p-4 bg-slate-950/40 rounded-xl border border-slate-800 flex justify-between items-center">
                 <div className="flex items-center space-x-3">
@@ -71,7 +71,7 @@ export default function LandingBenefits() {
                   </div>
                   <span className="text-xs font-bold text-white">Active Tenant Portal Accounts</span>
                 </div>
-                <span className="text-xs font-mono font-bold text-indigo-400">248 active</span>
+                <span className="text-xs font-mono font-bold text-indigo-400 flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping mr-2"></span> Live Tracking</span>
               </div>
             </div>
           </div>

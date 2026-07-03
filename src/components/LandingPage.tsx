@@ -28,26 +28,6 @@ export default function LandingPage({
   const [pageLoading, setPageLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('home');
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isPointerDevice, setIsPointerDevice] = useState(false);
-
-  // Monitor cursor glow coords (Desktop pointer-only)
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(pointer: fine)');
-    setIsPointerDevice(mediaQuery.matches);
-
-    const handlePointerMove = (e: PointerEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-    };
-
-    if (mediaQuery.matches) {
-      window.addEventListener('pointermove', handlePointerMove);
-    }
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-    };
-  }, []);
 
   // Intersection Observer for scroll tracking (Scroll Spy)
   useEffect(() => {
@@ -89,14 +69,6 @@ export default function LandingPage({
   return (
     <div className="min-h-screen bg-[#0B0F19] text-[#F8FAFC] font-sans selection:bg-[#CCFBF1] selection:text-[#0F766E] scroll-smooth antialiased transition-colors duration-200">
       
-      {/* Desktop Cursor Glow */}
-      {isPointerDevice && (
-        <div 
-          className="fixed pointer-events-none z-50 w-[350px] h-[350px] rounded-full bg-teal-500/[0.04] blur-[80px] -translate-x-1/2 -translate-y-1/2"
-          style={{ left: mousePos.x, top: mousePos.y, willChange: 'left, top' }}
-        />
-      )}
-
       {/* Navigation Bar */}
       <LandingNavbar 
         currentUser={currentUser}

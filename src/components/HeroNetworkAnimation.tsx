@@ -69,10 +69,6 @@ export default function HeroNetworkAnimation() {
         {/* Subtle Background Grid inside visualization */}
         <div className="absolute inset-0 bg-[radial-gradient(#14B8A6_1px,transparent_1px)] [background-size:24px_24px] opacity-10" />
 
-        {/* Ambient Radial Gradients */}
-        <div className="absolute top-[-10%] left-[-10%] w-3/4 h-3/4 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-3/4 h-3/4 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
-
         {/* SVG Connection Lines */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
           {connections.map((conn, i) => {
